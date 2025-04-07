@@ -53,22 +53,91 @@ const2 a _ _ = a
 
 -- current conclusions:
 -- 1) always check the last term in the signature --> indicates what to return
--- 2) The signatures defined over terms a,a may indicate same type but not necessarily same term value
+-- 2) The signatures defined over terms "a" ,where "a" may indicate same type but not necessarily same value
 -- 3) Think of it like maths, and ask what do you have to work with {function?, term?} 
 -- 4) Once you have an idea about 3) ask yourself, how many of each do you have to work with?
 -- 5) The above are not enough to get the hang of it
 
+---------------------------
+-- Personal: EXTRA PRACTICE
+---------------------------
+-- Tuple Transformations
+swapPair :: (a, b) -> (b, a)
+swapPair = undefined
+
+applyTwo :: (a -> b) -> (a -> c) -> a -> (b, c)
+applyTwo = undefined
+
+mapTriple :: (a -> b) -> (a, a, a) -> (b, b, b)
+mapTriple = undefined
+
+combinePairs :: (a, b) -> (c, d) -> (a, b, c, d)
+combinePairs = undefined
+
+getFourth :: (a, b, c, d) -> d
+getFourth = undefined
+
+-- Function Combinators
+twice :: (a -> a) -> a -> a
+twice = undefined
+
+applyN :: Int -> (a -> a) -> a -> a
+applyN = undefined
+
+flip3 :: (a -> b -> c -> d) -> c -> b -> a -> d
+flip3 = undefined
+
+composeBoth :: (b -> c) -> (a -> b) -> (a -> b) -> a -> (c, c)
+composeBoth = undefined
+
+ifThenElse :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
+ifThenElse = undefined
+
+-- Working with Higher-Order Functions
+applyWhen :: (a -> Bool) -> (a -> a) -> a -> a
+applyWhen = undefined
+
+chooseFunction :: (a -> Bool) -> (a -> b) -> (a -> b) -> a -> b
+chooseFunction = undefined
+
+selector :: (a -> Int) -> (a -> b) -> (a -> b) -> (a -> b) -> a -> b
+selector = undefined
+
+partial :: (a -> b -> c) -> a -> (b -> c)
+partial = undefined
+
 
 -- Generatlizations of (.)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+(.) f g x = f $ g x
 (.:) :: (c -> d) -> (a -> b -> c) -> a -> b -> d -- Hint: We saw this in class!
-(.:) = undefined
+(.:) f h x y = f $ h x y
 (.:.) :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
-(.:.) = undefined
+(.:.) f g x y z = f $ g x y z
 (.::) :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
-(.::) = undefined
+(.::) f g w x y z = f $ g w x y z
 (.::.) :: (f -> g) -> (a -> b -> c -> d -> e -> f) -> a -> b -> c -> d -> e -> g
-(.::.) = undefined
+(.::.) f g v w x y z = f $ g v w x y z
+
+-- Current Conclusion about reading the signature
+-- the brakets in a signature helps us read and deduce the implementation of the function
+-- looking inside a perticular bracket we'll always return a single "term"
+-- (unless of course the term is a tuple which in some respect is also a single term)
+-- we then look at the number elements before the final type and this will tell you
+-- how many concrete types there are:
+-- Explained Example
+-- (.:.) :: (d -> e) -> (a -> b -> c   ->   d) -> a -> b -> c -> e
+--             ^         1    2    3   ^  return 
+-- READ AS:    f                       g
+--                   ^ - could call it a dependant function meaning 
+-- it could be a new function term or a composition, depending on the context. 
+-- in our case because the returning type from g is what f will use then it's composed
+-- In other case we'd deduce something else 
+
+
 -- How can we ever implement such a function!?
+-- we need to consider all possible types at least the main bool, Int, Integer, Double etc
+-- exists such a generic function that you can apply with string --> bool and also Int --> Double???
 impossible :: a -> b
 impossible = undefined
 ---------------------------------------------------
