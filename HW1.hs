@@ -12,6 +12,7 @@ module HW1 where
 
 -- These import statement ensures you aren't using any "advanced" functions and types, e.g., lists.
 import Prelude (Bool (..), Eq (..), Foldable (sum), Int, Integer, Num (..), Ord (..), abs, div, error, even, flip, fst, id, mod, not, odd, otherwise, snd, take, undefined, ($), (&&), (.), (^), (||))
+import Distribution.Simple.Utils (xargs)
 
 ------------------------------------------------
 -- DO NOT MODIFY ANYTHING ABOVE THIS LINE !!! --
@@ -144,14 +145,57 @@ impossible = undefined
 -- Section 2: Function Composition & Transformation
 ---------------------------------------------------
 -- Count the number of digits of an integer
+
+abs' :: Integer -> Integer
+abs' x
+    | x >= 0 = x
+    | otherwise =  -x
+
+isNeg :: Integer -> Bool
+isNeg x = if x < 0 then True else False
+
 countDigits :: Integer -> Integer
-countDigits = undefined
+countDigits x
+    | x < 0 = countDigits $ abs' x
+    | x < 10 = 1
+    | otherwise = 1 + (countDigits $ div x 10)
+-- functions in haskell are noted by space i.e. spacing is important
+-- the brackets are used for grouping 
+-- the recursive is the same as 1 + countDigits (div x 10) or 
+-- 1 + countDigits (x `div` 10)
+
 -- Sums the  digits of an integer
 sumDigits :: Integer -> Integer
-sumDigits = undefined
+sumDigits x
+    | x < 0 = sumDigits $ abs' x
+    | x < 10 = x
+    | otherwise = x `mod` 10 + sumDigits (x `div` 10)
+
 -- Reverses the  digits of an integer
 reverseDigits :: Integer -> Integer
-reverseDigits = undefined
+reverseDigits x = 
+    let isNegative = isNeg x
+        absX  = abs' x
+        reverse = helpReverse absX 0
+    in if isNegative then - reverse else reverse
+    where 
+        helpReverse 0 acc = acc
+        helpReverse n acc = helpReverse (n `div` 10) (acc * 10 + n `mod` 10)
+
+-- might want to the countDigits method as well
+
+reverseDigits' :: Integer -> Integer
+reverseDigits' x = 
+    let isNegative' = isNeg x
+        absX' = abs' x
+        length = countDigits x
+        reverse' = helpReverse' absX' length
+    in if isNegative' then - reverse' else reverse'
+    where
+        helpReverse' n 1 = n
+        helpReverse' n len = helpReverse' (n `div` 10)  (len -1) + n `mod` 10 * 10 ^ (len -1)
+
+        
 -- Returns the length of the Collatz sequence starting from x. collatzLength 1 = 0. You can assume the input is positive.
 collatzLength :: Integer -> Integer
 collatzLength = undefined
