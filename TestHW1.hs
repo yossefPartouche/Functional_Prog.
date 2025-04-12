@@ -29,11 +29,29 @@ main = do
 
     putStrLn "\n== Prime and Special Number Tests =="
     print $ isPrime (2 :: Integer) == True
-    print $ isPrime (9 :: Integer) == False
+    print $ isPrime (13 :: Integer) == True
+    print $ isPrime (-2 :: Integer) == False
+    print $ isPrime (1 :: Integer) == False
+    print $ isPrime (0 :: Integer) == False
+    print $ isPrime (10 :: Integer) == False
+
+
     print $ isArmstrong (153 :: Integer) == True
     print $ isArmstrong (9474 :: Integer) == True
     print $ isPalindromicPrime (131 :: Integer) == True
     print $ isPalindromicPrime (13 :: Integer) == False
+
+    putStrLn "\n== Happy Numbers =="
+    -- Happy numbers
+    print $ isHappy (1 :: Integer) == True      -- By definition
+    print $ isHappy (7 :: Integer) == True      -- 7 → 49 → 97 → 130 → 10 → 1
+    print $ isHappy (10 :: Integer) == True     -- 10 → 1
+    print $ isHappy (19 :: Integer) == True     -- 19 → 82 → 68 → 100 → 1
+
+    -- Unhappy numbers
+    print $ isHappy (2 :: Integer) == False     -- Falls into a cycle
+    print $ isHappy (4 :: Integer) == False     -- Known unhappy
+    print $ isHappy (20 :: Integer) == False    -- Also gets stuck in loop
 
     putStrLn "\n== All tests finished =="
 

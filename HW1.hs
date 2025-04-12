@@ -322,7 +322,7 @@ sumDigitsToPower x pow
     | otherwise = (x `mod` 10) ^ pow + sumDigitsToPower (x `div` 10) pow
 
 isHappy :: Integer -> Bool
-isHappy n = findCycle n n
+isHappy n = findCycle n (sumDigitsToPower n 2)
   where
     findCycle slow fast
       | slow == 1 = True
