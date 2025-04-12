@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE GHC2024 #-}
 -- Implement the following functions.
 -- When you're done, ghc -Wall -Werror HW1.hs should successfully compile.
 --
