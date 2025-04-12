@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2024 #-}
+{-# LANGUAGE GHC2021 #-}
 -- Implement the following functions.
 -- When you're done, ghc -Wall -Werror HW1.hs should successfully compile.
 --
@@ -278,6 +278,7 @@ sumGen (fun, check, val) =
         startSumming v = 
             if not $ check v then 0 else v + startSumming (fun v)
 
+
 -- Checks if a generator produces a value that satisfies a predicate.
 anyGen :: (a -> Bool) -> Generator a -> Bool
 anyGen pred (fun, check, val) =
@@ -286,29 +287,54 @@ anyGen pred (fun, check, val) =
 
 -- Adds an additional predicate to a generator.
 andAlso :: (a -> Bool) -> Generator a -> Generator a
-andAlso = undefined
+andAlso addPred (func, oldPred, a) = (func, \x -> addPred x && oldPred x, a)
 
 -- Bonus (15 points): Generates all positive divisors of a number smaller than the number itself.
 divisors :: Integer -> Generator Integer
-divisors = undefined
+divisors n = (func, (< n), 0)
+    where 
+        func a = 
+            let curr = a + 1
+            in if n `mod` curr == 0 then curr else func curr
 
 -----------------------------------
 -- Section 4: Number classification
 -----------------------------------
 
 isPrime :: Integer -> Bool
-isPrime = undefined
-nextPrime :: Integer -> Integer
-nextPrime = undefined
+isPrime n
+    | n <= 1    = False
+    | otherwise = lengthGen (divisors n) == 1
 
+nextPrime :: Integer -> Integer
+nextPrime n = 
+    let a = n + 1
+    in if isPrime a then a else nextPrime a
+    
 primes :: Generator Integer
-primes = undefined
+primes = (nextPrime, const True, 2)
+
+-- Sums the digits to a specified power of an integer (helper function for isHappy and isArmstrong)
+sumDigitsToPower :: Integer -> Integer -> Integer
+sumDigitsToPower x pow 
+    | x < 0     = sumDigitsToPower (abs' x) pow
+    | x < 10    = x ^ pow
+    | otherwise = (x `mod` 10) ^ pow + sumDigitsToPower (x `div` 10) pow
 
 isHappy :: Integer -> Bool
-isHappy = undefined
+isHappy n = findCycle n n
+  where
+    findCycle slow fast
+      | slow == 1 = True
+      | fast == 1 = True
+      | slow == fast = False  
+      | otherwise = findCycle (sumDigitsToPower slow 2) (sumDigitsToPower (sumDigitsToPower fast 2) 2)
 
 isArmstrong :: Integer -> Bool
-isArmstrong = undefined
+isArmstrong n
+    | n < 0     = False
+    | otherwise = sumDigitsToPower n (countDigits n) == n
 
 isPalindromicPrime :: Integer -> Bool
-isPalindromicPrime = undefined
+isPalindromicPrime n = 
+    isPrime n && reverseDigits n == n
