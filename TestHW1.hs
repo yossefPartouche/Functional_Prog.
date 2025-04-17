@@ -53,6 +53,15 @@ main = do
     print $ isHappy (4 :: Integer) == False     -- Known unhappy
     print $ isHappy (20 :: Integer) == False    -- Also gets stuck in loop
 
+    putStrLn "\n== Divisors Tests =="
+
+    print $ genToList (divisors 0) == []
+    print $ genToList (divisors 1) == []
+    print $ genToList (divisors 2) == [1]
+    print $ genToList (divisors 6) == [1, 2, 3]
+    print $ genToList (divisors 12) == [1, 2, 3, 4, 6]
+    print $ genToList (divisors 17) == [1]
+    print $ genToList (divisors (-5)) == []
     putStrLn "\n== All tests finished =="
 
 -- Helper: convert a generator to a list safely
