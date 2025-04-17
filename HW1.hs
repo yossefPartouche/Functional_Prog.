@@ -241,7 +241,7 @@ lengthGen (somefun, check, val) =
     else delayCount (somefun val)
     where 
         delayCount v =
-            if not (check v) then 0 
+            if not (check v) then 1 
             else 1 + delayCount(somefun v)
 
 
