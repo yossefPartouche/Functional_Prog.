@@ -33,3 +33,8 @@ cabal.sandbox.config
 # Executable files without extension (common in Haskell)
 */Main
 */HW1
+
+# directory lesson files:
+
+Lectures/
+Recitations/
