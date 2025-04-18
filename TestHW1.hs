@@ -30,6 +30,7 @@ main = do
     print $ take 5 (genToList (constGen (7 :: Integer))) == replicate 5 7
 
     putStrLn "\n== Prime and Special Number Tests =="
+
     print $ isPrime (2 :: Integer) == True
     print $ isPrime (13 :: Integer) == True
     print $ isPrime (-2 :: Integer) == False
