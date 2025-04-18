@@ -15,6 +15,7 @@ main = do
     print $ dropThd ((1, 2, 3) :: (Integer, Integer, Integer)) == (1, 2)
 
     putStrLn "\n== Digit and Math Tests =="
+    print $ countDigits (0 :: Integer) == 1
     print $ countDigits (123456 :: Integer) == 6
     print $ sumDigits (-123 :: Integer) == 6
     print $ reverseDigits (1234 :: Integer) == 4321
@@ -23,6 +24,7 @@ main = do
 
     putStrLn "\n== Generator Tests =="
     print $ nthGen 3 positives == (4 :: Integer)
+    print $ nthGen 0 positives == (1 :: Integer)
     print $ hasLengthOfAtLeast 5 positives == True
     print $ hasNext emptyGen == False
     print $ take 5 (genToList (constGen (7 :: Integer))) == replicate 5 7

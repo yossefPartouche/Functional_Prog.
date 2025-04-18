@@ -304,7 +304,7 @@ divisors n = (func, (< n), 1)
 isPrime :: Integer -> Bool
 isPrime n
     | n <= 1    = False
-    | otherwise = lengthGen (divisors n) == 1
+    | otherwise = nthGen 0 (divisors n) == n
 
 nextPrime :: Integer -> Integer
 nextPrime n = 
