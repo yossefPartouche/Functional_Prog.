@@ -23,6 +23,20 @@ main = do
     print $ collatzLength (3 :: Integer) == 7
 
     putStrLn "\n== Generator Tests =="
+    print $ sumGen ((+1), (<5), 0) == (10)
+    print $ sumGen ((+1), (<1), 0) == 0
+    print $ anyGen (>0) positives == True
+    print $ anyGen (<17) (divisors 17) == False
+    {- 
+    To test:
+    andAlso
+    nextGen
+    primes
+    foreverGen
+    hasLengthofAtLeast
+    -}
+    print $ anyGen (HW1.const True) emptyGen == False
+    print $ anyGen (> 100) primes == True
     print $ nthGen 3 positives == (4 :: Integer)
     print $ nthGen 0 positives == (1 :: Integer)
     print $ hasLengthOfAtLeast 5 positives == True
@@ -37,6 +51,7 @@ main = do
     print $ isPrime (1 :: Integer) == False
     print $ isPrime (0 :: Integer) == False
     print $ isPrime (10 :: Integer) == False
+    print $ isPrime (0) == False
 
 
     print $ isArmstrong (153 :: Integer) == True

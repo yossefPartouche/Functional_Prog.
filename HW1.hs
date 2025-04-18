@@ -259,7 +259,7 @@ foreverGen :: (a -> a) -> a -> Generator a
 foreverGen f x = (f, \_ -> True, x)
 
 emptyGen :: Generator a
-emptyGen = (id,\_ -> False, undefined)
+emptyGen = (id,const False, undefined)
 
 -- Generates all integers except 0.
 integers :: Generator Integer
@@ -280,6 +280,8 @@ sumGen (fun, check, val) =
 
 
 -- Checks if a generator produces a value that satisfies a predicate.
+-- This is a predicate function exists a case such ... 
+-- if returns false --> for every case it's not satisfied
 anyGen :: (a -> Bool) -> Generator a -> Bool
 anyGen pred (fun, check, val) =
     if not $ check val then False
