@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2024 #-}
+{-# LANGUAGE GHC2021 #-}
 -- Implement the following functions.
 -- When you're done, ghc -Wall -Werror HW1.hs should successfully compile.
 --
@@ -216,11 +216,16 @@ type Generator a = (a -> a, a -> Bool, a)
 positives :: Generator Integer
 positives = ((+ 1), const True, 0)
 
--- Retrieves the nth value from a generator. The seed does not count as an element. You can assume n >= 0.
+-- Retrieves the nth value from a generator. The seed does not count as an element. If number is smaller than zero return the seed and if there is no nth value from generator return the last value of the generator/
 nthGen :: Integer -> Generator a -> a
 nthGen n (increment, continue, indx) =
-    if n <= 0 then increment indx
-    else nthGen (n - 1) (increment, continue, increment indx)
+    if n < 0 then indx
+    else if not (continue indx) then indx
+    else if n == 0 then increment indx
+    else
+        let next = increment indx
+        in nthGen (n - 1) (increment, continue, next)
+
 
 hasNext :: Generator a -> Bool
 hasNext (_, check, value) = 
@@ -272,11 +277,11 @@ integers = (altFun, const True, 0)
 -- Sums all the values produced by a generator until it stops.
 sumGen :: Generator Integer -> Integer
 sumGen (fun, check, val) = 
-    if not $ check val then 0 else
-    startSumming (fun val)
+        if check val then startSumming (fun val)
+        else 0
     where 
-        startSumming v = 
-            if not $ check v then 0 else v + startSumming (fun v)
+        startSumming v =
+            v + if check v then startSumming (fun v) else 0
 
 
 -- Checks if a generator produces a value that satisfies a predicate.
@@ -312,7 +317,7 @@ nextPrime n =
     in if isPrime a then a else nextPrime a
     
 primes :: Generator Integer
-primes = (nextPrime, const True, 2)
+primes = (nextPrime, const True, 1)
 
 -- Sums the digits to a specified power of an integer (helper function for isHappy and isArmstrong)
 sumDigitsToPower :: Integer -> Integer -> Integer
