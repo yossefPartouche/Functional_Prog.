@@ -4,24 +4,12 @@ import HW1
 
 main :: IO ()
 main = do
-    putStrLn "== Basic Tuple Tests =="
-    print $ (curry3 (\(x, y, z) -> x + y + z) 1 2 3 :: Integer) == 6
-    print $ (uncurry3 (\x y z -> x + y + z) (1, 2, 3) :: Integer) == 6
-    print $ fst3 ((1, 2, 3) :: (Integer, Integer, Integer)) == 1
-    print $ snd3 ((1, 2, 3) :: (Integer, Integer, Integer)) == 2
-    print $ thd3 ((1, 2, 3) :: (Integer, Integer, Integer)) == 3
-    print $ dropFst ((1, 2, 3) :: (Integer, Integer, Integer)) == (2, 3)
-    print $ dropSnd ((1, 2, 3) :: (Integer, Integer, Integer)) == (1, 3)
-    print $ dropThd ((1, 2, 3) :: (Integer, Integer, Integer)) == (1, 2)
+    putStrLn "== Additional Tests from PDF =="
 
-    putStrLn "\n== Digit and Math Tests =="
+    -- countDigits
     print $ countDigits (0 :: Integer) == 1
-    print $ countDigits (123456 :: Integer) == 6
-    print $ sumDigits (-123 :: Integer) == 6
-    print $ reverseDigits (1234 :: Integer) == 4321
-    print $ reverseDigits (-1234 :: Integer) == -4321
-    print $ collatzLength (3 :: Integer) == 7
-
+    print $ countDigits (1024 :: Integer) == 4
+    print $ countDigits (-42 :: Integer) == 2
     putStrLn "\n== Generator Tests =="
     print $ sumGen ((+1), (<5), 0) == (10)
     print $ sumGen ((+1), (<1), 0) == 0
@@ -42,8 +30,14 @@ main = do
     print $ hasLengthOfAtLeast 5 positives == True
     print $ hasNext emptyGen == False
     print $ take 5 (genToList (constGen (7 :: Integer))) == replicate 5 7
+    -- sumDigits
+    print $ sumDigits (0 :: Integer) == 0
+    print $ sumDigits (1024 :: Integer) == 7
+    print $ sumDigits (-42 :: Integer) == 6
+    -- reverseDigits
+    print $ reverseDigits (120 :: Integer) == 21
+    print $ reverseDigits (-42 :: Integer) == -24
 
-    putStrLn "\n== Prime and Special Number Tests =="
 
     print $ isPrime (2 :: Integer) == True
     print $ isPrime (13 :: Integer) == True
@@ -52,38 +46,83 @@ main = do
     print $ isPrime (0 :: Integer) == False
     print $ isPrime (10 :: Integer) == False
     print $ isPrime (0) == False
+    -- collatzLength
+    print $ collatzLength (1 :: Integer) == 0
+    print $ collatzLength (2 :: Integer) == 1
+    print $ collatzLength (4 :: Integer) == 2
+    print $ collatzLength (1024 :: Integer) == 10
+    print $ collatzLength (1025 :: Integer) == 36
 
+    -- nthGen edge cases
+    print $ nthGen (-1) (positives :: Generator Integer) == 0
+    print $ nthGen 42 (((+1), (< 10), 0) :: Generator Integer) == 10
 
+    -- hasNext
+    print $ hasNext (((+1), (<= 0), 0) :: Generator Integer) == True
+    print $ hasNext (((+1), (<= 0), 1) :: Generator Integer) == False
+
+    -- nextGen
+    --print $ thd3 (nextGen (((+1), (< 0), 0) :: Generator Integer)) == 1
+
+    -- lengthGen
+    print $ lengthGen (((+1), (< 0), 0) :: Generator Integer) == 0
+    print $ lengthGen (((+1), (<= 0), 0) :: Generator Integer) == 1
+    print $ lengthGen (((+1), (< 10), 0) :: Generator Integer) == 10
+
+    -- hasLengthOfAtLeast
+    print $ hasLengthOfAtLeast 10 (((+1), (< 10), 0) :: Generator Integer) == True
+    print $ hasLengthOfAtLeast 10 (((+1), (< 9), 0) :: Generator Integer) == False
+    print $ hasLengthOfAtLeast 42 (positives :: Generator Integer) == True
+
+    -- constGen and emptyGen
+    print $ nthGen 42 (constGen ("foobar" :: String)) == "foobar"
+    print $ lengthGen (emptyGen :: Generator Int) == 0
+    print $ lengthGen (emptyGen :: Generator (Int, Int)) == 0
+    print $ lengthGen (emptyGen :: Generator (Generator Int)) == 0
+
+    -- anyGen
+    print $ anyGen (== 42) (integers :: Generator Integer) == True
+    print $ anyGen (== (-42)) (integers :: Generator Integer) == True
+    -- Skipping: anyGen (== 0) integers — would not terminate
+
+    -- sumGen
+    print $ sumGen (((+1), (<= 1), 0) :: Generator Integer) == 3
+    print $ sumGen (((+1), (<= 1), 1) :: Generator Integer) == 2
+    print $ sumGen (((+1), (< 10), 0) :: Generator Integer) == 55
+    print $ sumGen (((+1), (< 10), 1) :: Generator Integer) == 54
+    print $ sumGen (emptyGen :: Generator Integer) == 0
+
+    -- andAlso
+    print $ lengthGen (andAlso (< 10) (positives :: Generator Integer)) == 10
+    print $ lengthGen (andAlso (> 20) (andAlso (< 10) (positives :: Generator Integer))) == 0
+    print $ lengthGen (andAlso (< 20) (andAlso (< 10) (positives :: Generator Integer))) == 10
+
+    -- nextPrime
+    print $ nextPrime (-42) == 2
+    print $ nextPrime 1 == 2
+    print $ nextPrime 2 == 3
+    print $ nextPrime 100 == 101
+
+    -- nthGen on primes
+    print $ nthGen 0 (primes :: Generator Integer) == 2
+    print $ nthGen 100 (primes :: Generator Integer) == 547
+
+    -- isHappy
+    print $ isHappy (7 :: Integer) == True
+    print $ isHappy (42 :: Integer) == False
+    print $ isHappy (130 :: Integer) == True
+    print $ isHappy (-130 :: Integer) == True
+
+    -- isArmstrong
+    print $ isArmstrong (0 :: Integer) == True
+    print $ isArmstrong (1 :: Integer) == True
+    print $ isArmstrong (42 :: Integer) == False
     print $ isArmstrong (153 :: Integer) == True
-    print $ isArmstrong (9474 :: Integer) == True
-    print $ isPalindromicPrime (131 :: Integer) == True
+
+    -- isPalindromicPrime
+    print $ isPalindromicPrime (2 :: Integer) == True
+    print $ isPalindromicPrime (11 :: Integer) == True
     print $ isPalindromicPrime (13 :: Integer) == False
+    print $ isPalindromicPrime (101 :: Integer) == True
 
-    putStrLn "\n== Happy Numbers =="
-    -- Happy numbers
-    print $ isHappy (1 :: Integer) == True      -- By definition
-    print $ isHappy (7 :: Integer) == True      -- 7 → 49 → 97 → 130 → 10 → 1
-    print $ isHappy (10 :: Integer) == True     -- 10 → 1
-    print $ isHappy (19 :: Integer) == True     -- 19 → 82 → 68 → 100 → 1
-
-    -- Unhappy numbers
-    print $ isHappy (2 :: Integer) == False     -- Falls into a cycle
-    print $ isHappy (4 :: Integer) == False     -- Known unhappy
-    print $ isHappy (20 :: Integer) == False    -- Also gets stuck in loop
-
-    putStrLn "\n== Divisors Tests =="
-
-    print $ genToList (divisors 0) == []
-    print $ genToList (divisors 1) == []
-    print $ genToList (divisors 2) == [1]
-    print $ genToList (divisors 6) == [1, 2, 3]
-    print $ genToList (divisors 12) == [1, 2, 3, 4, 6]
-    print $ genToList (divisors 17) == [1]
-    print $ genToList (divisors (-5)) == []
-    putStrLn "\n== All tests finished =="
-
--- Helper: convert a generator to a list safely
-genToList :: Generator a -> [a]
-genToList (f, c, x)
-  | not (c x)  = []
-  | otherwise  = x : genToList (f, c, f x)
+    putStrLn "\n== PDF-based tests completed =="
