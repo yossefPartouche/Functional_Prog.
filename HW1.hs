@@ -276,12 +276,11 @@ integers = (altFun, const True, 0)
 
 -- Sums all the values produced by a generator until it stops.
 sumGen :: Generator Integer -> Integer
-sumGen (fun, check, val) = 
-        if check val then startSumming (fun val)
-        else 0
-    where 
-        startSumming v =
-            v + if check v then startSumming (fun v) else 0
+sumGen (fun, check, val) = helper val
+     where
+        helper v = 
+            let next = fun v in if check next then next + helper next
+            else 0
 
 
 -- Checks if a generator produces a value that satisfies a predicate.

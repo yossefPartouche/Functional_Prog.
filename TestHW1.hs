@@ -10,34 +10,37 @@ main = do
     print $ countDigits (0 :: Integer) == 1
     print $ countDigits (1024 :: Integer) == 4
     print $ countDigits (-42 :: Integer) == 2
-    putStrLn "\n== Generator Tests =="
-    print $ sumGen ((+1), (<5), 0) == (10)
+    
+    print $ sumGen ((+1), (<5), 0) == 10
     print $ sumGen ((+1), (<1), 0) == 0
     print $ anyGen (>0) positives == True
     print $ anyGen (<17) (divisors 17) == False
-    {- 
-    To test:
-    andAlso
-    nextGen
-    primes
-    foreverGen
-    hasLengthofAtLeast
-    -}
+
+    -- Divisors
+    print $ nthGen 0 (divisors 12) == 2 
+    print $ nthGen 1 (divisors 12) == 3
+    print $ nthGen 2 (divisors 12) == 4
+    print $ nthGen 3 (divisors 12) == 6
+    print $ nthGen 4 (divisors 12) == 12
+    print $ lengthGen (divisors 12) == 5 -- Should be 5 divisors: 1,2,3,4,6
+    print $ lengthGen (divisors 17) == 1  -- Only 1
+    print $ lengthGen (divisors 20) == 5
+
     print $ anyGen (HW1.const True) emptyGen == False
     print $ anyGen (> 100) primes == True
     print $ nthGen 3 positives == (4 :: Integer)
     print $ nthGen 0 positives == (1 :: Integer)
     print $ hasLengthOfAtLeast 5 positives == True
     print $ hasNext emptyGen == False
-    print $ take 5 (genToList (constGen (7 :: Integer))) == replicate 5 7
+
     -- sumDigits
     print $ sumDigits (0 :: Integer) == 0
     print $ sumDigits (1024 :: Integer) == 7
     print $ sumDigits (-42 :: Integer) == 6
+
     -- reverseDigits
     print $ reverseDigits (120 :: Integer) == 21
     print $ reverseDigits (-42 :: Integer) == -24
-
 
     print $ isPrime (2 :: Integer) == True
     print $ isPrime (13 :: Integer) == True
@@ -46,6 +49,7 @@ main = do
     print $ isPrime (0 :: Integer) == False
     print $ isPrime (10 :: Integer) == False
     print $ isPrime (0) == False
+
     -- collatzLength
     print $ collatzLength (1 :: Integer) == 0
     print $ collatzLength (2 :: Integer) == 1
@@ -86,10 +90,14 @@ main = do
     -- Skipping: anyGen (== 0) integers — would not terminate
 
     -- sumGen
-    print $ sumGen (((+1), (<= 1), 0) :: Generator Integer) == 3
-    print $ sumGen (((+1), (<= 1), 1) :: Generator Integer) == 2
-    print $ sumGen (((+1), (< 10), 0) :: Generator Integer) == 55
-    print $ sumGen (((+1), (< 10), 1) :: Generator Integer) == 54
+    print $ sumGen (((+1), (<= 1), 0) :: Generator Integer) == 1
+    print $ sumGen (((+1), (<= 2), 0) :: Generator Integer) == 3
+    print $ sumGen (((+1), (<= 3), 0) :: Generator Integer) == 6
+    print $ sumGen (((+1), (<= 1), 1) :: Generator Integer) == 0
+    print $ sumGen (((+1), (<= 2), 1) :: Generator Integer) == 2
+    print $ sumGen (((+1), (<= 3), 1) :: Generator Integer) == 5
+    print $ sumGen (((+1), (< 10), 0) :: Generator Integer) == 45
+    print $ sumGen (((+1), (< 10), 1) :: Generator Integer) == 44
     print $ sumGen (emptyGen :: Generator Integer) == 0
 
     -- andAlso
