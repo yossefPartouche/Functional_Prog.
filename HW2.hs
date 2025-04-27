@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2024 #-}
+{-# LANGUAGE GHC2021 #-}
 -- Tells HLS to show warnings, and the file won't be compiled if there are any warnings, e.g.,
 -- eval (-- >>>) won't work.
 {-# OPTIONS_GHC -Wall -Werror #-}
@@ -95,25 +95,56 @@ mapMaybe f = \case
 
 -- Section 1.2 Basic Eithers
 fromEither :: b -> Either a b -> b
-fromEither = undefined
+fromEither b = \case
+  Left _ -> b
+  Right x -> x
 concatEitherMap :: (a -> Either e b) -> Either e a -> Either e b
-concatEitherMap = undefined
+concatEitherMap f = \case
+  Left x -> Left x
+  Right y -> f y 
+
 either :: (a -> c) -> (b -> c) -> Either a b -> c
-either = undefined
+either f g = \case
+  Left x -> f x
+  Right y -> g y
+
 mapLeft :: (a -> c) -> Either a b -> Either c b
-mapLeft = undefined
+mapLeft f = \case
+  Left x -> Left $ f x
+  Right y -> Right y  
+
 catEithers :: [Either e a] -> Either e [a]
-catEithers = undefined
+catEithers xs = run [] xs
+  where 
+    run :: [a] -> [Either e a] -> Either e [a]
+    run lst [] = Right lst
+    run _ (Left x:_) = Left x 
+    run lst (Right y:tail) = run (lst ++ [y]) tail
+
 mapEither :: (a -> Either e b) -> [a] -> Either e [b]
-mapEither = undefined
-partitionEithers :: [Either a b] -> ([a], [b])
-partitionEithers = undefined
+mapEither f xs = catEithers (map f xs)
+
+partitionEithers :: [Either a b] -> ([a], [b]) --- We are supposed to learn foldr next week
+partitionEithers = foldr split ([], [])
+  where 
+    split (Left x) (l, r) = (x : l, r)
+    split (Right y) (l, r) = (l, y : r)
+
 eitherToMaybe :: Either a b -> Maybe b
-eitherToMaybe = undefined
+eitherToMaybe = \case 
+  Left _ -> Nothing
+  Right y -> Just y
+
 productEither :: (Either a Int -> Either a Int -> Either a Int)
-productEither = undefined
+productEither (Right x) (Right y) = Right (x * y)  
+productEither (Left x) _ = Left x  
+productEither _ (Left x) = Left x
+
 liftEither2 :: (a -> b -> c) -> Either e a -> Either e b -> Either e c
-liftEither2 = undefined
+liftEither2 f (Right x) (Right y) = Right (f x y)
+liftEither2 _ (Left x) _ = Left x
+liftEither2 _ _ (Left x) = Left x
+
 -- Section 2: Expressions
 data Expr = Iden String | Lit Int | Plus Expr Expr | Minus Expr Expr | Mul Expr Expr | Div Expr Expr deriving (Show, Eq)
 
