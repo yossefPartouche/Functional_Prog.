@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2021 #-}
+{-# LANGUAGE GHC2024 #-}
 -- Tells HLS to show warnings, and the file won't be compiled if there are any warnings, e.g.,
 -- eval (-- >>>) won't work.
 {-# OPTIONS_GHC -Wall -Werror #-}
@@ -18,12 +18,12 @@ import Prelude (Bool (..), Bounded (..), Char, Either (..), Enum (..), Eq (..), 
 maybeMap :: (a -> b) -> Maybe a -> Maybe b
 maybeMap f = \case
   Nothing -> Nothing
-  Just x -> Just $ f x
+  Just x -> Just (f x)
 
 eitherMap :: (a -> b) -> Either e a -> Either e b
 eitherMap f = \case
   Left x -> Left x
-  Right y -> Right $ f y
+  Right y -> Right (f y)
 
 -- Section 1.1: Basic Maybes
 fromMaybe :: a -> Maybe a -> a
@@ -71,12 +71,12 @@ filterMaybe f = \case
 
 sumMaybe :: Maybe Int -> Maybe Int -> Maybe Int
 sumMaybe x y = case (x, y) of
-  (Just a, Just b) -> Just $ a + b
+  (Just a, Just b) -> Just (a + b)
   _ -> Nothing
 
 liftMaybe2 :: (a -> b -> c) -> Maybe a -> Maybe b -> Maybe c
 liftMaybe2 f x y = case (x, y) of
-  (Just a, Just b) -> Just $ f a b 
+  (Just a, Just b) -> Just (f a b)
   _ -> Nothing
 
 catMaybes :: [Maybe a] -> [a]
@@ -110,7 +110,7 @@ either f g = \case
 
 mapLeft :: (a -> c) -> Either a b -> Either c b
 mapLeft f = \case
-  Left x -> Left $ f x
+  Left x -> Left (f x)
   Right y -> Right y  
 
 catEithers :: [Either e a] -> Either e [a]
@@ -150,15 +150,65 @@ data Expr = Iden String | Lit Int | Plus Expr Expr | Minus Expr Expr | Mul Expr 
 
 -- Adds parentheses around sub-expressions (the top level expression never has parentheses).
 exprToString :: Expr -> String
-exprToString = undefined
+exprToString = \case
+  Iden x -> x 
+  Lit n -> show n
+  Plus exp1 exp2 -> "(" ++ exprToString exp1 ++ " + " ++ exprToString exp2 ++ ")"
+  Minus exp1 exp2 -> "(" ++ exprToString exp1 ++ " - " ++ exprToString exp2 ++ ")"
+  Mul exp1 exp2 -> "(" ++ exprToString exp1 ++ " * " ++ exprToString exp2 ++ ")"
+  Div exp1 exp2 -> "(" ++ exprToString exp1 ++ " / "  ++ exprToString exp2 ++ ")"
+
+
 -- Bonus (25 points): Same as the above, but without unnecessary parentheses
 exprToString' :: Expr -> String
 exprToString' = undefined
 -- Returns Nothing on division by zero.
 partialEvaluate :: [(String, Int)] -> Expr -> Maybe Expr
-partialEvaluate = undefined
+partialEvaluate env = \case 
+  Iden x -> case lookup x env of 
+    Just val -> Just (Lit val)
+    Nothing -> Nothing
+  Lit n -> Just (Lit n)
+  Plus exp1 exp2 -> do
+    Lit v1 <- partialEvaluate env exp1
+    Lit v2 <- partialEvaluate env exp2 
+    Just (Lit (v1 + v2))
+  Minus exp1 exp2 -> do
+    Lit v1 <- partialEvaluate env exp1
+    Lit v2 <- partialEvaluate env exp2 
+    Just (Lit (v1 - v2))
+  Mul exp1 exp2 -> do
+    Lit v1 <- partialEvaluate env exp1 
+    Lit v2 <- partialEvaluate env exp2 
+    Just (Lit (v1 * v2))
+  Div exp1 exp2 -> do
+    Lit v1 <- partialEvaluate env exp1 
+    Lit v2 <- partialEvaluate env exp2 
+    if v2 == 0 then Nothing else Just (Lit (v1 `div` v2))
+
+
 negateExpr :: Expr -> Expr
-negateExpr = undefined
+negateExpr = \case 
+   Iden x -> Iden x  
+   Lit n -> Lit (-n)  
+   Plus exp1 exp2 -> 
+       case (negateExpr exp1, negateExpr exp2) of
+         (Lit v1, Lit v2) -> Lit (-(v1 + v2))  
+         _ -> Plus exp1 exp2  
+   Minus exp1 exp2 -> 
+       case (negateExpr exp1, negateExpr exp2) of
+         (Lit v1, Lit v2) -> Lit (-(v1 - v2)) 
+         _ -> Minus exp1 exp2 
+   Mul exp1 exp2 -> 
+       case (negateExpr exp1, negateExpr exp2) of
+         (Lit v1, Lit v2) -> Lit (-(v1 * v2)) 
+         _ -> Mul exp1 exp2  
+   Div exp1 exp2 ->
+       case (negateExpr exp1, negateExpr exp2) of
+         (Lit v1, Lit v2) -> if v2 == 0 then Div exp1 exp2 else Lit (-(v1 `div` v2)) \
+         _ -> Div exp1 exp2  
+
+
 -- if the exponent is smaller than 0, this should return 0.
 powerExpr :: Expr -> Int -> Expr
 powerExpr = undefined
