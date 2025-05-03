@@ -124,11 +124,11 @@ catEithers xs = run [] xs
 mapEither :: (a -> Either e b) -> [a] -> Either e [b]
 mapEither f xs = catEithers (map f xs)
 
-partitionEithers :: [Either a b] -> ([a], [b]) --- We are supposed to learn foldr next week
-partitionEithers = foldr split ([], [])
+partitionEithers :: [Either a b] -> ([a], [b]) 
+partitionEithers = foldr f ([], [])
   where 
-    split (Left x) (l, r) = (x : l, r)
-    split (Right y) (l, r) = (l, y : r)
+    f (Left x) (l, r) = (x : l, r)
+    f (Right y) (l, r) = (l, y : r)
 
 eitherToMaybe :: Either a b -> Maybe b
 eitherToMaybe = \case 
@@ -204,9 +204,9 @@ negateExpr = \case
          (Lit v1, Lit v2) -> Lit (-(v1 * v2)) 
          _ -> Mul exp1 exp2  
    Div exp1 exp2 ->
-       case (negateExpr exp1, negateExpr exp2) of
-         (Lit v1, Lit v2) -> if v2 == 0 then Div exp1 exp2 else Lit (-(v1 `div` v2)) \
-         _ -> Div exp1 exp2  
+      case (negateExpr exp1, negateExpr exp2) of
+        (Lit v1, Lit v2) -> if v2 == 0 then Div exp1 exp2 else Lit (-(v1 `div` v2))
+        _ -> Div exp1 exp2  
 
 
 -- if the exponent is smaller than 0, this should return 0.
