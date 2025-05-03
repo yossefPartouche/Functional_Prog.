@@ -174,32 +174,21 @@ partialEvaluate env = \case
     Just val -> Just (Lit val)
     Nothing  -> Just (Iden x)
   Lit n -> Just (Lit n)
-  Plus e1 e2 -> do
-    v1 <- partialEvaluate env e1
-    v2 <- partialEvaluate env e2
-    case (v1, v2) of
-      (Lit n1, Lit n2) -> Just (Lit (n1 + n2))
-      _ -> Just (Plus v1 v2)
-  Minus e1 e2 -> do
-    v1 <- partialEvaluate env e1
-    v2 <- partialEvaluate env e2
-    case (v1, v2) of
-      (Lit n1, Lit n2) -> Just (Lit (n1 - n2))
-      _ -> Just (Minus v1 v2)
-  Mul e1 e2 -> do
-    v1 <- partialEvaluate env e1
-    v2 <- partialEvaluate env e2
-    case (v1, v2) of
-      (Lit n1, Lit n2) -> Just (Lit (n1 * n2))
-      _ -> Just (Mul v1 v2)
-  Div e1 e2 -> do
-    v1 <- partialEvaluate env e1
-    v2 <- partialEvaluate env e2
-    case v2 of
-      Lit 0 -> Nothing
-      _ -> case (v1, v2) of
-           (Lit n1, Lit n2) -> Just (Lit (n1 `div` n2)) 
-           _ -> Just (Div v1 v2)
+  Plus e1 e2 -> getEval (+) Plus False e1 e2
+  Minus e1 e2 -> getEval (-) Minus False e1 e2
+  Mul e1 e2 -> getEval (*) Mul False e1 e2
+  Div e1 e2 -> getEval (div) Div True e1 e2
+  where
+    getEval f op isDiv e1 e2 = do
+      v1 <- partialEvaluate env e1
+      v2 <- partialEvaluate env e2
+      case v2 of 
+        Lit 0 -> if isDiv then Nothing else continue v1 v2
+        _ -> continue v1 v2
+      where 
+        continue v1 v2 = case (v1, v2) of
+          (Lit n1, Lit n2) -> Just (Lit (f n1 n2))
+          _ -> Just (op v1 v2)
 
 negateExpr :: Expr -> Expr
 negateExpr exp = Mul (Lit (-1)) exp
