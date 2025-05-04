@@ -10,6 +10,7 @@ module HW2 where
 
 import Data.List (find, foldl')
 import Prelude (Bool (..), Bounded (..), Char, Either (..), Enum (..), Eq (..), Int, Integer, Maybe (..), Num (..), Ord (..), Show (..), String, all, and, any, concat, concatMap, const, curry, div, divMod, elem, error, even, filter, flip, foldl, foldr, fromIntegral, fst, id, length, lines, lookup, map, mod, not, notElem, null, odd, otherwise, product, snd, sum, uncurry, undefined, unlines, unwords, words, (!!), ($), (&&), (++), (.), (||))
+import Distribution.Simple.Utils (xargs)
 
 ------------------------------------------------
 -- DO NOT MODIFY ANYTHING ABOVE THIS LINE !!! --
@@ -205,8 +206,11 @@ negateExpr = \case
          _ -> Mul exp1 exp2  
    Div exp1 exp2 ->
        case (negateExpr exp1, negateExpr exp2) of
-         (Lit v1, Lit v2) -> if v2 == 0 then Div exp1 exp2 else Lit (-(v1 `div` v2)) \
-         _ -> Div exp1 exp2  
+        (Lit v1, Lit v2) -> 
+          if v2 == 0 
+            then Div exp1 exp2 
+            else Lit (-(v1 `div` v2))
+        _ -> Div exp1 exp2  
 
 
 -- if the exponent is smaller than 0, this should return 0.
@@ -217,55 +221,185 @@ modExpr = undefined
 
 -- Section 3.1: zips and products
 zip :: [a] -> [b] -> [(a, b)]
-zip = undefined
+zip [] _ = []
+zip _ [] = []
+zip (x : xs) (y : ys) = (x,y) : zip xs ys
+
 zipWithIndex :: [a] -> [(Int, a)]
-zipWithIndex = undefined
+zipWithIndex = counter 1
+  where
+    counter _ [] = []
+    counter i (x:xs) = (i, x) : counter (i+1) xs
+
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-zipWith = undefined
+zipWith _ [] _ = [] 
+zipWith _ _ [] = []
+zipWith f (x:xs) (y:ys) = f x y : zipWith f xs ys
+
 zipWithDefault :: a -> b -> [a] -> [b] -> [(a, b)] -- Zips two lists, filling missing elements with defaults
-zipWithDefault = undefined
+zipWithDefault _ _ [] _ = []
+zipWithDefault _ _ _ [] = []
+zipWithDefault dx dy (x:xs) (y:ys) = (x,y) : zipRest xs ys
+  where 
+    zipRest [] ys' = map ((,) dx) ys'
+    zipRest xs' [] = map (flip (,) dy) xs'
+    zipRest (x':xs') (y':ys') = (x', y') : zipRest xs' ys'
+
 data ZipFail = ErrorFirst | ErrorSecond deriving (Eq, Show)
+
 zipEither :: [a] -> [b] -> Either ZipFail [(a, b)]
-zipEither = undefined
+zipEither _ [] = Left ErrorSecond
+zipEither [] _ = Left ErrorFirst
+zipEither (x:xs) (y:ys) = 
+  case zipEither xs ys of 
+    Right pairs -> Right ((x,y) : pairs)
+    Left err -> Left err
+
 unzip :: [(a, b)] -> ([a], [b])
-unzip = undefined
+unzip [] = ([], [])
+unzip ((x,y):rest) = 
+  let (xs, ys) = unzip rest
+  in (x:xs, y:ys)
+{-
+- Debatting if this is more declarative
+unzip :: [(a,b)] -> ([a], [b])
+unzip tupledList = go tupledList ([], [])
+  where
+    go [] (as, bs) = (as, bs)
+    go ((x,y): rest) (as, bs) = go rest (as ++[x], bs ++ [u])
+-}
+
 unzipFirst :: [(a, b)] -> [a]
-unzipFirst = undefined
+unzipFirst [] = []
+unzipFirst ((x,_): rest) = 
+  let xs = unzipFirst rest
+  in x:xs
+
 unzipSecond :: [(a, b)] -> [b]
-unzipSecond = undefined
+unzipSecond [] = []
+unzipSecond ((_, y): rest) = 
+  let ys = unzipSecond rest
+  in y:ys
+
 cartesianWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-cartesianWith = undefined
+cartesianWith _ [] _ = []
+cartesianWith _ _ [] = []
+cartesianWith f (x:xs) (y:ys) = go f x (y:ys) ++ cartesianWith f xs ys
+  where 
+    go _ _ [] = []
+    go f' x' (y':ys') = f' x' y' : go f' x' ys'
+
+
+
 
 -- Section 3.2: list functions
-snoc :: [a] -> a -> [a] -- The opposite of cons!
-snoc = undefined
+snoc :: [a] -> a -> [a] -- The opposite of cons
+snoc [] x = [x]
+snoc (head : tail) x = head : snoc tail x
+
+{- Debatting if this is more declarative
+unzip :: [(a,b)] -> ([a], [b])
+unzip tupledList = go tupledList ([], [])
+  where
+    go [] (as, bs) = (as, bs)
+    go ((x,y): rest) (as, bs) = go rest (as ++[x], bs ++ [u])
+-}
 take :: Int -> [a] -> [a]
 -- The last element of the result (if non-empty) is the last element which satisfies the predicate
-take = undefined
+take n xs
+  | n <= 0 = []
+  | otherwise = go n xs
+  where   
+    go 0 _  = []
+    go _ [] = []
+    go m (x':xs') = x' : go (m-1) xs'
+
 takeWhile :: (a -> Bool) -> [a] -> [a]
-takeWhile = undefined
+takeWhile _ [] = []
+takeWhile p (x:xs)
+  | p x = x : takeWhile p xs
+  | otherwise = []
+
 drop :: Int -> [a] -> [a]
 -- The first element of the result (if non-empty) is the first element which doesn't satisfy the predicate
-drop = undefined
+drop n xs 
+  | n <= 0 = xs
+  | otherwise = go n xs
+  where
+    go 0 xs' = xs'
+    go _ [] = []
+    go m (_:xs') = go (m-1) xs'
+  
 dropWhile :: (a -> Bool) -> [a] -> [a]
-dropWhile = undefined
+dropWhile _ [] = []
+dropWhile p (x:xs)
+  | p x = dropWhile p xs
+  | otherwise = (x:xs)
+
 slice :: Int -> Int -> [a] -> [a]
-slice = undefined
+slice _ _ [] = []
+slice m n (x:xs) = take (n-m) $ drop m (x:xs) 
+
 takeEvery :: Int -> [a] -> [a]
-takeEvery = undefined
+takeEvery _ [] = []
+takeEvery n xs
+  | n <= 0 = []
+  | otherwise = go (drop (n-1) xs)
+  where 
+    go [] = []
+    go (y:ys) = y : (go $ drop (n-1) ys)
+
 dropEvery :: Int -> [a] -> [a]
--- Removes *consecutive* repeats
-dropEvery = undefined
+dropEvery _ [] = []
+dropEvery n xs
+  | n <= 0 = xs
+  | otherwise = go xs
+  where 
+    go [] = []
+    go ys = take (n-1) ys ++ go (drop n ys)
+
 nub :: [Int] -> [Int]
--- Removes *all* repeats, consecutive or not.
-nub = undefined
+nub [] = []
+nub (x:xs) = x : filter (/= x) xs
+
 uniq :: [Int] -> [Int]
-uniq = undefined
+uniq [] = []
+uniq (x:xs) = x : uniq (filter (/= x) xs)
+
 -- Section 3.3: base64
 base64Chars :: String -- As defined in the PDF
 base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 toBase64 :: Integer -> String
-toBase64 = undefined
+toBase64 n
+  | n < 0     = '-' : toBase64 (-n)  -- Handle negative numbers with leading '-'
+  | n == 0    = "A"                  -- Zero is represented as 'A' (index 0)
+  | otherwise = encodeBase64 n ""    -- Use helper function for positive numbers
+  where
+    encodeBase64 :: Integer -> String -> String
+    encodeBase64 0 acc = acc
+    encodeBase64 m acc = 
+      let
+        idx = fromIntegral (m `mod` 64)
+        char = base64Chars !! idx
+        newAcc = if null acc then [char] else char : acc
+      in encodeBase64 (m `div` 64) newAcc
+
 fromBase64 :: String -> Maybe Integer
-fromBase64 = undefined
+fromBase64 "" = Nothing                         
+fromBase64 "-" = Nothing                       
+fromBase64 ('-':str) = maybeMap negate (fromBase64 str) 
+fromBase64 str = decodeBase64 str 0
+  where
+    decodeBase64 :: String -> Integer -> Maybe Integer
+    decodeBase64 [] acc = Just acc              -- base case and sucessful case
+    decodeBase64 (c:cs) acc =
+      case findIndex c base64Chars of
+        Just idx -> decodeBase64 cs (acc * 64 + fromIntegral idx) 
+        Nothing  -> Nothing                    -- deals with all cases that aren't in base64Chars
+    
+    findIndex :: Char -> String -> Maybe Int
+    findIndex _ [] = Nothing
+    findIndex char (x:xs)
+      | char == x = Just 0                      
+      | otherwise = maybeMap (+1) (findIndex char xs)  
