@@ -31,7 +31,7 @@ fromMaybe :: a -> Maybe a -> a
 fromMaybe a = \case
   Nothing -> a 
   Just x -> x
-
+  
 concatMaybeMap :: (a -> Maybe b) -> Maybe a -> Maybe b
 concatMaybeMap f = \case 
   Nothing -> Nothing
@@ -47,7 +47,7 @@ maybeHead = \case
   [] -> Nothing
   (x:_) -> Just x 
 
--- Helper function for maybeLast, maybeMaximum, maybeMinimum
+-- Helper function for maybeLast, maybeMaximum, maybeMinimum 
 iterateList :: (a -> a -> a) -> [a] -> Maybe a
 iterateList _ [] = Nothing
 iterateList f (x:xs) = Just (run x xs)
@@ -125,11 +125,11 @@ catEithers xs = run [] xs
 mapEither :: (a -> Either e b) -> [a] -> Either e [b]
 mapEither f xs = catEithers (map f xs)
 
-partitionEithers :: [Either a b] -> ([a], [b]) --- We are supposed to learn foldr next week
-partitionEithers = foldr split ([], [])
+partitionEithers :: [Either a b] -> ([a], [b]) 
+partitionEithers = foldr f ([], [])
   where 
-    split (Left x) (l, r) = (x : l, r)
-    split (Right y) (l, r) = (l, y : r)
+    f (Left x) (l, r) = (x : l, r)
+    f (Right y) (l, r) = ( l, y : r)
 
 eitherToMaybe :: Either a b -> Maybe b
 eitherToMaybe = \case 
@@ -152,12 +152,17 @@ data Expr = Iden String | Lit Int | Plus Expr Expr | Minus Expr Expr | Mul Expr 
 -- Adds parentheses around sub-expressions (the top level expression never has parentheses).
 exprToString :: Expr -> String
 exprToString = \case
-  Iden x -> x 
+  Iden x -> x
   Lit n -> show n
-  Plus exp1 exp2 -> "(" ++ exprToString exp1 ++ " + " ++ exprToString exp2 ++ ")"
-  Minus exp1 exp2 -> "(" ++ exprToString exp1 ++ " - " ++ exprToString exp2 ++ ")"
-  Mul exp1 exp2 -> "(" ++ exprToString exp1 ++ " * " ++ exprToString exp2 ++ ")"
-  Div exp1 exp2 -> "(" ++ exprToString exp1 ++ " / "  ++ exprToString exp2 ++ ")"
+  Plus e1 e2 -> addParIfNeed e1 ++ " + " ++ addParIfNeed e2
+  Minus e1 e2 -> addParIfNeed e1 ++ " - " ++ addParIfNeed e2
+  Mul e1 e2 -> addParIfNeed e1 ++ " * " ++ addParIfNeed e2
+  Div e1 e2 -> addParIfNeed e1 ++ " / " ++ addParIfNeed e2
+  where
+    addParIfNeed exp = case exp  of
+      Iden _ -> exprToString exp
+      Lit _ -> exprToString exp
+      _ -> "(" ++ exprToString exp ++ ")"
 
 
 -- Bonus (25 points): Same as the above, but without unnecessary parentheses
@@ -165,59 +170,48 @@ exprToString' :: Expr -> String
 exprToString' = undefined
 -- Returns Nothing on division by zero.
 partialEvaluate :: [(String, Int)] -> Expr -> Maybe Expr
-partialEvaluate env = \case 
-  Iden x -> case lookup x env of 
+partialEvaluate env = \case
+  Iden x -> case lookup x env of
     Just val -> Just (Lit val)
-    Nothing -> Nothing
+    Nothing  -> Just (Iden x)
   Lit n -> Just (Lit n)
-  Plus exp1 exp2 -> do
-    Lit v1 <- partialEvaluate env exp1
-    Lit v2 <- partialEvaluate env exp2 
-    Just (Lit (v1 + v2))
-  Minus exp1 exp2 -> do
-    Lit v1 <- partialEvaluate env exp1
-    Lit v2 <- partialEvaluate env exp2 
-    Just (Lit (v1 - v2))
-  Mul exp1 exp2 -> do
-    Lit v1 <- partialEvaluate env exp1 
-    Lit v2 <- partialEvaluate env exp2 
-    Just (Lit (v1 * v2))
-  Div exp1 exp2 -> do
-    Lit v1 <- partialEvaluate env exp1 
-    Lit v2 <- partialEvaluate env exp2 
-    if v2 == 0 then Nothing else Just (Lit (v1 `div` v2))
-
+  Plus e1 e2 -> getEval (+) Plus False e1 e2
+  Minus e1 e2 -> getEval (-) Minus False e1 e2
+  Mul e1 e2 -> getEval (*) Mul False e1 e2
+  Div e1 e2 -> getEval (div) Div True e1 e2
+  where
+    getEval f op isDiv e1 e2 = do
+      v1 <- partialEvaluate env e1
+      v2 <- partialEvaluate env e2
+      case v2 of 
+        Lit 0 -> if isDiv then Nothing else continue v1 v2
+        _ -> continue v1 v2
+      where 
+        continue v1 v2 = case (v1, v2) of
+          (Lit n1, Lit n2) -> Just (Lit (f n1 n2))
+          _ -> Just (op v1 v2)
 
 negateExpr :: Expr -> Expr
-negateExpr = \case 
-   Iden x -> Iden x  
-   Lit n -> Lit (-n)  
-   Plus exp1 exp2 -> 
-       case (negateExpr exp1, negateExpr exp2) of
-         (Lit v1, Lit v2) -> Lit (-(v1 + v2))  
-         _ -> Plus exp1 exp2  
-   Minus exp1 exp2 -> 
-       case (negateExpr exp1, negateExpr exp2) of
-         (Lit v1, Lit v2) -> Lit (-(v1 - v2)) 
-         _ -> Minus exp1 exp2 
-   Mul exp1 exp2 -> 
-       case (negateExpr exp1, negateExpr exp2) of
-         (Lit v1, Lit v2) -> Lit (-(v1 * v2)) 
-         _ -> Mul exp1 exp2  
-   Div exp1 exp2 ->
-       case (negateExpr exp1, negateExpr exp2) of
-        (Lit v1, Lit v2) -> 
-          if v2 == 0 
-            then Div exp1 exp2 
-            else Lit (-(v1 `div` v2))
-        _ -> Div exp1 exp2  
+negateExpr exp = Mul (Lit (-1)) exp
 
 
 -- if the exponent is smaller than 0, this should return 0.
 powerExpr :: Expr -> Int -> Expr
-powerExpr = undefined
+powerExpr exp n
+  | n < 0 = investigate 0
+  | n == 0 = investigate 1
+  | n == 1 = exp
+  | otherwise = Mul exp (powerExpr exp (n - 1))
+  where 
+    investigate :: Int -> Expr
+    investigate pow = case partialEvaluate [] exp of 
+      Nothing -> Div (Lit 1) (Lit 0)  -- A trap! Will later evaluate to Nothing!! 
+      Just _ -> if pow == 1 then Lit 1 else Lit 0
+
+
+
 modExpr :: Expr -> Expr -> Expr
-modExpr = undefined
+modExpr exp1 exp2 = Minus exp1 (Mul exp2 (Div exp1 exp2))
 
 -- Section 3.1: zips and products
 zip :: [a] -> [b] -> [(a, b)]
