@@ -31,6 +31,7 @@ fromMaybe :: a -> Maybe a -> a
 fromMaybe a = \case
   Nothing -> a 
   Just x -> x
+
   
 concatMaybeMap :: (a -> Maybe b) -> Maybe a -> Maybe b
 concatMaybeMap f = \case 
@@ -38,8 +39,8 @@ concatMaybeMap f = \case
   Just x -> f x  
 
 maybe :: b -> (a -> b) -> Maybe a -> b
-maybe b f = \case 
-  Nothing -> b
+maybe y f = \case 
+  Nothing -> y
   Just x -> f x 
 
 maybeHead :: [a] -> Maybe a
@@ -56,9 +57,20 @@ iterateList f (x:xs) = Just (run x xs)
       [] -> curr
       (val:tail) -> run (f curr val) tail
 
-maybeLast :: [a] -> Maybe a
+maybeLast :: [a] -> Maybe a 
 maybeLast xs = iterateList (\_ y -> y) xs
- 
+
+maybeExtrema :: (Int -> Int -> Bool) -> [Int] -> Maybe Int
+maybeExtrema r = iterateList (\ x y -> if r x y then x else y)
+
+{-
+maybeMaximum :: [Int] -> Maybe Int
+maybeMaximum = maybeExtrema (>)
+
+maybeMinimum :: [Int] -> Maybe Int
+maybeMaximum = maybeExtrema (<)
+-}
+
 maybeMaximum :: [Int] -> Maybe Int
 maybeMaximum xs = iterateList (\x y -> if x > y then x else y) xs
 
@@ -275,29 +287,23 @@ unzipSecond ((_, y): rest) =
   let ys = unzipSecond rest
   in y:ys
 
-cartesianWith :: (a -> b -> c) -> [a] -> [b] -> [c]
+uniqg :: Eq a => [a] -> [a]
+uniqg [] = []
+uniqg (x:xs) = x : uniqg (filter (/= x) xs)
+
+cartesianWith :: (Eq c) => (a -> b -> c) -> [a] -> [b] -> [c]
 cartesianWith _ [] _ = []
 cartesianWith _ _ [] = []
-cartesianWith f (x:xs) (y:ys) = go f x (y:ys) ++ cartesianWith f xs ys
-  where 
-    go _ _ [] = []
-    go f' x' (y':ys') = f' x' y' : go f' x' ys'
-
-
-
+cartesianWith f (x:xs) ys = 
+  let firstResults = map (f x) ys
+      restResults = cartesianWith f xs ys
+      in uniqg (firstResults ++ restResults)
 
 -- Section 3.2: list functions
 snoc :: [a] -> a -> [a] -- The opposite of cons
 snoc [] x = [x]
 snoc (head : tail) x = head : snoc tail x
 
-{- Debatting if this is more declarative
-unzip :: [(a,b)] -> ([a], [b])
-unzip tupledList = go tupledList ([], [])
-  where
-    go [] (as, bs) = (as, bs)
-    go ((x,y): rest) (as, bs) = go rest (as ++[x], bs ++ [u])
--}
 take :: Int -> [a] -> [a]
 -- The last element of the result (if non-empty) is the last element which satisfies the predicate
 take n xs
@@ -354,7 +360,10 @@ dropEvery n xs
 
 nub :: [Int] -> [Int]
 nub [] = []
-nub (x:xs) = x : filter (/= x) xs
+nub [x] = [x]
+nub (x:y:xs)
+  | x == y = nub (x:xs)
+  | otherwise = x : nub (y:xs)
 
 uniq :: [Int] -> [Int]
 uniq [] = []
