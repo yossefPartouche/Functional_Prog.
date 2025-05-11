@@ -4,6 +4,7 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
+
 module HW3 where
 
 import Prelude (Bool (..), Char, Either (..), Enum (..), Eq (..), Int, Integer, Maybe (..), Num (..), Ord (..), Rational, Show (..), String, all, and, any, concat, concatMap, const, curry, div, divMod, drop, dropWhile, elem, error, even, filter, flip, foldr, fst, head, id, init, last, length, lines, lookup, map, maximum, minimum, mod, not, notElem, null, odd, or, otherwise, product, reverse, show, snd, splitAt, sum, tail, take, takeWhile, uncurry, undefined, unlines, unwords, unzip, words, zip, zipWith, (!!), ($), (&&), (++), (.), (/), (||))
@@ -18,7 +19,15 @@ import qualified Data.Set as Set
 data Tree a = Empty | Tree (Tree a) a (Tree a) deriving (Show, Eq)
 
 treeSize :: Tree a -> Int
+treeSize = \case 
+    Empty -> 0
+    Tree l _ r -> 1 + treeSize l + treeSize r
+
 treeHeight :: Tree a -> Int
+treeHeight = \case 
+    Empty -> 0
+    Tree l _ r -> maximum[1 + treeHeight l, 1 + treeHeight r]
+
 preOrderTraversal :: Tree a -> [a]
 inOrderTraversal :: Tree a -> [a]
 postOrderTraversal :: Tree a -> [a]
