@@ -14,7 +14,7 @@ import Data.Enum (Bounded)
 import Data.List (find, foldl', isInfixOf, isPrefixOf, isSuffixOf, nub, uncons)
 import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, listToMaybe, mapMaybe, maybe)
 import Data.Ratio (denominator, numerator, (%))
-import qualified Data.Set as Set
+import qualified Data.Set as Set 
 
 data Tree a = Empty | Tree (Tree a) a (Tree a) deriving (Show, Eq)
 
@@ -29,11 +29,74 @@ treeHeight = \case
     Tree l _ r -> maximum[1 + treeHeight l, 1 + treeHeight r]
 
 preOrderTraversal :: Tree a -> [a]
+preOrderTraversal = \case
+    Empty -> []
+    Tree l cur r -> [cur] ++ preOrderTraversal l ++ preOrderTraversal r 
+
+
 inOrderTraversal :: Tree a -> [a]
+inOrderTraversal = \case
+    Empty -> []
+    Tree l cur r -> inOrderTraversal l ++ [cur] ++ inOrderTraversal r 
+
 postOrderTraversal :: Tree a -> [a]
+postOrderTraversal = \case
+    Empty -> []
+    Tree l cur r -> postOrderTraversal l ++ postOrderTraversal r ++ [cur]
+
 data Classification = Full | Complete | FullAndComplete | Perfect | Degenerate | Other deriving (Show, Eq)
 classify :: Tree a -> Classification
+classify t  
+    | isPerfect t = Perfect
+    | isFull t && isComplete t = FullAndComplete
+    | isFull t = Full
+    | isComplete t = Complete
+    | isDegenerate t = Degenerate
+    | otherwise = Other
+
+-- For classification
+isFull :: Tree a -> Bool
+isFull = \case
+    Empty -> True 
+    Tree Empty _ Empty -> True
+    Tree _ _ Empty -> False 
+    Tree Empty _ _ -> False
+    Tree l _ r -> isFull l && isFull r
+   
+-- Helper function for isComplete
+levelOrderTraversal :: Tree a -> [Maybe a]
+levelOrderTraversal tree = levelOrderHelper [tree]
+  where
+    levelOrderHelper [] = []
+    levelOrderHelper (Empty:xs) = Nothing : levelOrderHelper xs 
+    levelOrderHelper (Tree l cur r:xs) = Just cur : levelOrderHelper (xs ++ [l, r])
+
+-- For classification
+isComplete :: Tree a -> Bool
+isComplete t = helperChecker (levelOrderTraversal t)
+  where
+    helperChecker [] = True
+    helperChecker (Nothing:xs) = all isNothing xs 
+    helperChecker (_:xs) = helperChecker xs  
+
+-- For classification
+isPerfect :: Tree a -> Bool
+isPerfect = \case
+    Empty -> True
+    Tree l _ r -> treeHeight l == treeHeight r && isPerfect l && isPerfect r 
+
+-- For classification
+isDegenerate :: Tree a -> Bool
+isDegenerate = \case
+    Empty -> True 
+    Tree Empty _ r -> isDegenerate r 
+    Tree l _ Empty -> isDegenerate l 
+    Tree _ _ _ -> False
+
 isBalanced :: Tree a -> Bool
+isBalanced = \case
+    Empty -> True
+    Tree l _ r -> abs (treeHeight l - treeHeight r) <= 1 && isBalanced l && isBalanced r
 
 -- Section 2: Infinite lists
 data InfiniteList a = a :> InfiniteList a
@@ -48,28 +111,41 @@ sampleN :: Int -> InfiniteList a -> [a]
 sampleN n = take n . itoList
 
 itoList :: InfiniteList a -> [a]
+itoList = undefined
 iiterate :: (a -> a) -> a -> InfiniteList a
+iiterate = undefined
 irepeat :: a -> InfiniteList a
+irepeat = undefined
 
 naturals :: InfiniteList Integer
+naturals = undefined 
 imap :: (a -> b) -> InfiniteList a -> InfiniteList b
+imap = undefined
 iconcat :: InfiniteList [a] -> InfiniteList a
+iconcat = undefined
 grouped :: Integer -> InfiniteList a -> InfiniteList [a]
+grouped = undefined
 reverseN :: Integer -> InfiniteList a -> InfiniteList a
+reverseN = undefined
 
 sqrtInf :: Rational -> InfiniteList Rational
+sqrtInf = undefined
 type InfiniteString = InfiniteList Char
 longDivision :: Rational -> InfiniteString
+longDivision = undefined
 sqrtStrings :: Rational -> InfiniteList InfiniteString
+sqrtStrings = undefined
 
 -- Section 3: Maze
 data Cell = Open | Blocked | Gold deriving (Show, Eq, Ord)
 data Maze = Maze {width :: Int, height :: Int, layout :: [[Cell]]} deriving (Show)
 cellAt :: Maze -> CellPosition -> Maybe Cell
+cellAt = undefined
 data CellPosition = CellPosition {row :: Int, col :: Int} deriving (Show, Eq, Ord)
 
 data Error = OutOfBounds | InvalidCell | NoPath deriving (Show, Eq, Ord)
 getAvailableMoves :: Maze -> CellPosition -> Either Error [CellPosition]
+getAvailableMoves = undefined
 
 -- From the lectures
 data Queue a = Queue [a] [a] deriving (Show, Eq)
@@ -83,6 +159,8 @@ dequeue (Queue l []) = dequeue $ Queue [] (reverse l)
 dequeue (Queue l (r : rs)) = Just (r, Queue l rs)
 
 shortestPath :: Maze -> CellPosition -> CellPosition -> Either Error [CellPosition]
+shortestPath = undefined
 
 -- Bonus (15 points)
 treasureHunt :: Maze -> CellPosition -> Either Error [CellPosition]
+treasureHunt = undefined
