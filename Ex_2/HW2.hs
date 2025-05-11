@@ -1,4 +1,4 @@
-{-# LANGUAGE GHC2024 #-}
+{-# LANGUAGE GHC2024   #-}
 -- Tells HLS to show warnings, and the file won't be compiled if there are any warnings, e.g.,
 -- eval (-- >>>) won't work.
 {-# OPTIONS_GHC -Wall -Werror #-}
