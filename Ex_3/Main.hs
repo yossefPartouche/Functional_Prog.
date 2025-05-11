@@ -217,6 +217,47 @@ testIsBalanced = TestList [
   TestCase (assertEqual "Unbalanced tree is not balanced" False (HW3.isBalanced unbalancedTree)),
   TestCase (assertEqual "Degenerate tree is not balanced (if height > 1)" False (HW3.isBalanced degenerateTree))
   ]
+-- Maze definition
+maze :: HW3.Maze
+maze = HW3.Maze
+  { HW3.width = 3
+  , HW3.height = 3
+  , HW3.layout = 
+      [ [HW3.Open, HW3.Open, HW3.Open]
+      , [HW3.Open, HW3.Blocked, HW3.Open]
+      , [HW3.Gold, HW3.Open, HW3.Gold]
+      ]
+  }
+
+  -- Testing the cellAt function
+testCellAt :: Test
+testCellAt = TestList [
+  TestCase (assertEqual "for cellAt (0,0)" (Just HW3.Open) (HW3.cellAt maze (HW3.CellPosition 0 0))),
+  TestCase (assertEqual "for cellAt (1,1)" (Just HW3.Blocked) (HW3.cellAt maze (HW3.CellPosition 1 1))),
+  TestCase (assertEqual "for cellAt (2,2)" (Just HW3.Gold) (HW3.cellAt maze (HW3.CellPosition 2 2))),
+  TestCase (assertEqual "for cellAt (2,0)" (Just HW3.Gold) (HW3.cellAt maze (HW3.CellPosition 2 0))),
+  TestCase (assertEqual "for cellAt (0,2)" (Just HW3.Open) (HW3.cellAt maze (HW3.CellPosition 0 2))),
+  TestCase (assertEqual "for cellAt (3,0)" Nothing (HW3.cellAt maze (HW3.CellPosition 3 0))),
+  TestCase (assertEqual "for cellAt (0,-1)" Nothing (HW3.cellAt maze (HW3.CellPosition 0 (-1))))
+  ]
+
+-- Testing the getAvailableMoves function
+testGetAvailableMoves :: Test
+testGetAvailableMoves = TestList [
+  TestCase (assertEqual "for getAvailableMoves (0,0)" 
+    (Right [HW3.CellPosition 0 1, HW3.CellPosition 1 0]) 
+    (HW3.getAvailableMoves maze (HW3.CellPosition 0 0))),
+  TestCase (assertEqual "for getAvailableMoves (0,1)" 
+    (Right [HW3.CellPosition 0 0, HW3.CellPosition 0 2]) 
+    (HW3.getAvailableMoves maze (HW3.CellPosition 0 1))),
+  TestCase (assertEqual "for getAvailableMoves (1,1)" 
+    (Left HW3.InvalidCell) 
+    (HW3.getAvailableMoves maze (HW3.CellPosition 1 1))),
+  TestCase (assertEqual "for getAvailableMoves (-1,42)" 
+    (Left HW3.OutOfBounds) 
+    (HW3.getAvailableMoves maze (HW3.CellPosition (-1) 42)))
+  ]
+
 
 -- Combine all tests into a test list
 tests :: Test
@@ -232,7 +273,9 @@ tests = TestList [
   testIsPerfect,
   testIsDegenerate,
   testClassify,
-  testIsBalanced
+  testIsBalanced,
+  testCellAt,
+  testGetAvailableMoves
   ]
 
 -- Run the tests

@@ -140,12 +140,27 @@ sqrtStrings = undefined
 data Cell = Open | Blocked | Gold deriving (Show, Eq, Ord)
 data Maze = Maze {width :: Int, height :: Int, layout :: [[Cell]]} deriving (Show)
 cellAt :: Maze -> CellPosition -> Maybe Cell
-cellAt = undefined
+cellAt maze (CellPosition h w)
+    | h < 0 || h >= height maze = Nothing
+    | w < 0 || w >=  width maze = Nothing
+    | otherwise = Just (layout maze !! h !! w)
+
 data CellPosition = CellPosition {row :: Int, col :: Int} deriving (Show, Eq, Ord)
 
 data Error = OutOfBounds | InvalidCell | NoPath deriving (Show, Eq, Ord)
 getAvailableMoves :: Maze -> CellPosition -> Either Error [CellPosition]
-getAvailableMoves = undefined
+getAvailableMoves maze (CellPosition h w) = 
+    if h < 0 || h >= height maze || w < 0 || w >= width maze then Left OutOfBounds
+    else if layout maze !! h !! w == Blocked then Left InvalidCell
+    else Right (rights (map cellContains [CellPosition h (w - 1), CellPosition h (w + 1), CellPosition (h - 1) w, CellPosition (h + 1) w]))
+    where 
+        cellContains (CellPosition row col)
+            |row < 0 || row >= height maze || col < 0 || col >= width maze = Left OutOfBounds
+            |layout maze !! row !! col == Blocked = Left InvalidCell 
+            |layout maze !! row !! col == Gold = Right (CellPosition row col)
+            |layout maze !! row !! col == Open = Right (CellPosition row col)
+            |otherwise = Left InvalidCell 
+
 
 -- From the lectures
 data Queue a = Queue [a] [a] deriving (Show, Eq)
