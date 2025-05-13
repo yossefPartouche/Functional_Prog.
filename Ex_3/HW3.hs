@@ -111,18 +111,22 @@ sampleN :: Int -> InfiniteList a -> [a]
 sampleN n = take n . itoList
 
 itoList :: InfiniteList a -> [a]
-itoList = undefined
+itoList (x :> xs) = x : itoList xs
 iiterate :: (a -> a) -> a -> InfiniteList a
-iiterate = undefined
+iiterate f x = x :> iiterate f (f x)
 irepeat :: a -> InfiniteList a
-irepeat = undefined
+irepeat x = iiterate id x 
 
 naturals :: InfiniteList Integer
-naturals = undefined 
+naturals = iiterate (\x -> x+1) 0 
 imap :: (a -> b) -> InfiniteList a -> InfiniteList b
-imap = undefined
+imap f (x :> xs) = f x :> imap f xs
 iconcat :: InfiniteList [a] -> InfiniteList a
-iconcat = undefined
+iconcat (fs :> sn :> xs) = addToInf (fs ++ sn) (iconcat xs) 
+    where 
+        addToInf :: [a] -> InfiniteList a -> InfiniteList a
+        addToInf [] y = y
+        addToInf (x:rest) y = x :> addToInf rest y
 grouped :: Integer -> InfiniteList a -> InfiniteList [a]
 grouped = undefined
 reverseN :: Integer -> InfiniteList a -> InfiniteList a
