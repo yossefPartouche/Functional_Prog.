@@ -185,7 +185,7 @@ toDigit x = toEnum (fromEnum '0' + fromIntegral x)
 
 
 sqrtStrings :: Rational -> InfiniteList (InfiniteList Char)
-sqrtStrings n = decimalise  (sqrtInf n)
+sqrtStrings n = decimalise (sqrtInf n)
     where
         decimalise :: InfiniteList Rational -> InfiniteList (InfiniteList Char)
         decimalise (x :> xs) = longDivision x :> decimalise xs
@@ -226,10 +226,41 @@ dequeue :: Queue a -> Maybe (a, Queue a)
 dequeue (Queue [] []) = Nothing
 dequeue (Queue l []) = dequeue $ Queue [] (reverse l)
 dequeue (Queue l (r : rs)) = Just (r, Queue l rs)
+isEmpty :: Queue a -> Bool
+isEmpty (Queue [] []) = True
+isEmpty _ = False
+
+type Path a = [a]
+type BFSQueue a = Queue (Path a)
 
 shortestPath :: Maze -> CellPosition -> CellPosition -> Either Error [CellPosition]
-shortestPath = undefined
+shortestPath maze startPos destPos 
+    = runBFS maze (enqueue startPos emptyQueue) (enqueue [startPos] emptyQueue) (Set.insert startPos Set.empty)
+    where 
+        runBFS :: Maze -> Queue CellPosition -> BFSQueue CellPosition -> Set.Set CellPosition -> Either Error [CellPosition]
+        runBFS maze' toVisit paths visited
+            | isEmpty paths = Left NoPath                
+            | otherwise =
+                case dequeue paths of
+                    Nothing -> Left NoPath
+                    Just (currentPath, restPaths) ->
+                        let currentPos = last currentPath
+                        in if currentPos == destPos then Right currentPath
+                        else 
+                            case getAvailableMoves maze' currentPos of
+                                    Left err -> Left err
+                                    Right moves -> 
+                                        let nextSteps = (filteredList moves visited)
+                                            newPaths = map (\pos -> currentPath ++ [pos]) nextSteps 
+                                            newToVisit = foldr enqueue toVisit nextSteps
+                                            newPathQueue = foldr enqueue restPaths newPaths
+                                            newVisited = foldr Set.insert visited nextSteps
+                                        in runBFS maze' newToVisit newPathQueue newVisited
 
+filteredList :: [CellPosition] -> Set.Set CellPosition -> [CellPosition]
+filteredList xs visited = filter (`Set.notMember` visited) xs
+
+        
 -- Bonus (15 points)
 treasureHunt :: Maze -> CellPosition -> Either Error [CellPosition]
 treasureHunt = undefined
