@@ -18,6 +18,7 @@ import qualified Data.Set as Set
 import Data.Bits (Bits(xor))
 import Data.Char (intToDigit)
 import GHC.Internal.Text.Read (Lexeme(String))
+import Data.Graph (path)
 
 data Tree a = Empty | Tree (Tree a) a (Tree a) deriving (Show, Eq)
 
@@ -202,6 +203,7 @@ cellAt maze (CellPosition h w)
 data CellPosition = CellPosition {row :: Int, col :: Int} deriving (Show, Eq, Ord)
 
 data Error = OutOfBounds | InvalidCell | NoPath deriving (Show, Eq, Ord)
+
 getAvailableMoves :: Maze -> CellPosition -> Either Error [CellPosition]
 getAvailableMoves maze (CellPosition h w) = 
     if h < 0 || h >= height maze || w < 0 || w >= width maze then Left OutOfBounds
@@ -234,8 +236,12 @@ type Path a = [a]
 type BFSQueue a = Queue (Path a)
 
 shortestPath :: Maze -> CellPosition -> CellPosition -> Either Error [CellPosition]
-shortestPath maze startPos destPos 
-    = runBFS maze (enqueue startPos emptyQueue) (enqueue [startPos] emptyQueue) (Set.insert startPos Set.empty)
+shortestPath maze startPos destPos = 
+    case getAvailableMoves maze startPos of
+        Left err -> Left err
+        Right _ -> case getAvailableMoves maze destPos of
+            Left err -> Left err
+            Right _ -> runBFS maze (enqueue startPos emptyQueue) (enqueue [startPos] emptyQueue) (Set.insert startPos Set.empty)
     where 
         runBFS :: Maze -> Queue CellPosition -> BFSQueue CellPosition -> Set.Set CellPosition -> Either Error [CellPosition]
         runBFS maze' toVisit paths visited
@@ -257,10 +263,64 @@ shortestPath maze startPos destPos
                                             newVisited = foldr Set.insert visited nextSteps
                                         in runBFS maze' newToVisit newPathQueue newVisited
 
+shortestPathT2 :: Maze -> CellPosition -> CellPosition -> Either Error [CellPosition]
+shortestPathT2 maze startPos destPos = 
+    case getAvailableMoves maze startPos of
+        Left err -> Left err
+        Right _ -> case getAvailableMoves maze destPos of
+            Left err -> Left err
+            Right _ -> runBFST2 maze destPos (enqueue startPos emptyQueue) (Set.insert startPos Set.empty) ([])
+
+runBFST2 :: Maze -> CellPosition -> Queue CellPosition -> Set.Set CellPosition -> [(CellPosition, CellPosition)] -> Either Error [CellPosition]
+runBFST2 maze destPos toVisit visited fromTo = case dequeue toVisit of 
+    Nothing -> Left NoPath
+    Just (currCell, restQueue) -> if currCell == destPos then Right (getPath fromTo destPos)
+    else 
+        case getAvailableMoves maze currCell of
+            Left err -> Left err
+            Right pMoves -> 
+                let newMoves = (filteredList pMoves visited) 
+                    newEdges = fromTo ++ map (\next -> (currCell, next)) newMoves
+                    newToVisit = foldr enqueue restQueue newMoves
+                    newVisited = foldr Set.insert visited newMoves
+                in runBFST2 maze destPos newToVisit newVisited newEdges
+                
+
+getPath :: [(CellPosition, CellPosition)] -> CellPosition -> [CellPosition]
+getPath edges curr = 
+    case find (\(_, to) -> to == curr) edges of
+        Nothing -> [curr]
+        Just (from, _) -> getPath edges from ++ [curr]
+
 filteredList :: [CellPosition] -> Set.Set CellPosition -> [CellPosition]
 filteredList xs visited = filter (`Set.notMember` visited) xs
 
         
 -- Bonus (15 points)
 treasureHunt :: Maze -> CellPosition -> Either Error [CellPosition]
-treasureHunt = undefined
+treasureHunt maze startPos = 
+    case getAvailableMoves maze startPos of
+        Left err -> Left err
+        Right _ -> 
+            let treasureList = findTreasures maze 0 0
+            in createFullPath startPos treasureList
+    where
+        createFullPath :: CellPosition -> [CellPosition] -> Either Error [CellPosition]
+        createFullPath _ [] = Right []
+        createFullPath current (tCell:rest) = 
+            case shortestPathT2 maze current tCell of
+                Left err -> Left err
+                Right pathToT -> 
+                    case createFullPath tCell rest of
+                        Left err -> Left err
+                        Right [] -> Right pathToT 
+                        Right (_ :restTail) -> Right (pathToT ++ restTail)
+
+
+findTreasures :: Maze ->Int -> Int -> [CellPosition]
+findTreasures maze h w 
+    | h == height maze = []
+    | w == width maze = findTreasures maze (h+1) 0
+    | cellAt maze (CellPosition h w) == Just Gold = (CellPosition h w) : findTreasures maze h (w+1)
+    | otherwise = findTreasures  maze h (w+1)
+
