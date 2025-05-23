@@ -225,7 +225,7 @@ maze = HW3.Maze
   , HW3.layout = 
       [ [HW3.Open, HW3.Open, HW3.Open]
       , [HW3.Open, HW3.Blocked, HW3.Open]
-      , [HW3.Gold, HW3.Open, HW3.Gold]
+      , [HW3.Treasure, HW3.Open, HW3.Treasure]
       ]
   }
 
@@ -234,8 +234,8 @@ testCellAt :: Test
 testCellAt = TestList [
   TestCase (assertEqual "for cellAt (0,0)" (Just HW3.Open) (HW3.cellAt maze (HW3.CellPosition 0 0))),
   TestCase (assertEqual "for cellAt (1,1)" (Just HW3.Blocked) (HW3.cellAt maze (HW3.CellPosition 1 1))),
-  TestCase (assertEqual "for cellAt (2,2)" (Just HW3.Gold) (HW3.cellAt maze (HW3.CellPosition 2 2))),
-  TestCase (assertEqual "for cellAt (2,0)" (Just HW3.Gold) (HW3.cellAt maze (HW3.CellPosition 2 0))),
+  TestCase (assertEqual "for cellAt (2,2)" (Just HW3.Treasure) (HW3.cellAt maze (HW3.CellPosition 2 2))),
+  TestCase (assertEqual "for cellAt (2,0)" (Just HW3.Treasure) (HW3.cellAt maze (HW3.CellPosition 2 0))),
   TestCase (assertEqual "for cellAt (0,2)" (Just HW3.Open) (HW3.cellAt maze (HW3.CellPosition 0 2))),
   TestCase (assertEqual "for cellAt (3,0)" Nothing (HW3.cellAt maze (HW3.CellPosition 3 0))),
   TestCase (assertEqual "for cellAt (0,-1)" Nothing (HW3.cellAt maze (HW3.CellPosition 0 (-1))))
