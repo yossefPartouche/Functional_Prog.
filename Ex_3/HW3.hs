@@ -1,3 +1,5 @@
+-- Yossi Partouche
+-- Dana Stok
 {-# LANGUAGE GHC2024 #-}
 -- Implement the following functions.
 -- When you're done, ghc -Wall -Werror HW3.hs should successfully compile.
