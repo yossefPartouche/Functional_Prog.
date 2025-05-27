@@ -51,9 +51,14 @@ remove x (MultiSet ms) = case lookupS x ms of
 -- | Convert a list into a multiset.
 fromList :: Ord a => [a] -> MultiSet a
 fromList = foldr insert empty
+
 -- | Convert a multiset into a list, including duplicates.
 toList :: Ord a => MultiSet a -> [a]
-toList = foldr (:) []
+toList xs = flattenDup $ Set.toList (_getMultiset xs)
+
+flattenDup :: [(Arg a Int)] -> [a]
+flattenDup [] = []
+flattenDup (Arg x c: rest) = replicate c x ++ flattenDup rest
 
 lookupS :: Ord a => a -> Set.Set (Arg a Int) -> Maybe (Arg a Int)
 lookupS e s = 
@@ -61,8 +66,19 @@ lookupS e s =
     Just (Arg y n) | e == y -> Just (Arg y n)
     _                       -> Nothing
 
+instance Eq a => Eq (MultiSet a) where
+    (MultiSet xs) == (MultiSet xs') = 
+        (xs == xs') && (extractCount (Set.toList (xs))) == (extractCount (Set.toList (xs')))
+            where 
+                extractCount :: [(Arg a Int)] -> [Int]
+                extractCount = map (\(Arg _ c)-> c)
 
-instance Eq a => Eq (MultiSet a) 
-instance Show a => Show (MultiSet a) 
-instance Ord a => Semigroup (MultiSet a)
-instance Ord a => Monoid (MultiSet a)
+instance Show a => Show (MultiSet a) where
+    show xs = "{" ++ intercalate "," (map show (flattenDup $ Set.toList (_getMultiset xs))) ++ "}"
+
+instance Ord a => Semigroup (MultiSet a) where
+    xs <> xs' = fromList $ toList xs ++ toList xs'
+
+instance Ord a => Monoid (MultiSet a) where
+    mempty = empty
+
