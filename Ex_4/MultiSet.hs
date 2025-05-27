@@ -67,12 +67,15 @@ lookupS e s =
     _                       -> Nothing
 
 instance Eq a => Eq (MultiSet a) where
+    (MultiSet xs) == (MultiSet xs') = xs == xs'
+{-
+instance Eq a => Eq (MultiSet a) where
     (MultiSet xs) == (MultiSet xs') = 
         (xs == xs') && (extractCount (Set.toList (xs))) == (extractCount (Set.toList (xs')))
             where 
                 extractCount :: [(Arg a Int)] -> [Int]
                 extractCount = map (\(Arg _ c)-> c)
-
+-}
 instance Show a => Show (MultiSet a) where
     show xs = "{" ++ intercalate "," (map show (flattenDup $ Set.toList (_getMultiset xs))) ++ "}"
 
