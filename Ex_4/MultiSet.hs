@@ -69,6 +69,7 @@ lookupS e s =
 instance Eq a => Eq (MultiSet a) where
     (MultiSet xs) == (MultiSet xs') = xs == xs'
 {-
+-- Might be too much
 instance Eq a => Eq (MultiSet a) where
     (MultiSet xs) == (MultiSet xs') = 
         (xs == xs') && (extractCount (Set.toList (xs))) == (extractCount (Set.toList (xs')))
