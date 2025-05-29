@@ -14,6 +14,7 @@ import Data.Map qualified as Map
 import Data.Maybe
 import MultiSet qualified as MS
 import Prelude (Bool (..), Char, Double, Either (..), Eq (..), Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
+import Distribution.Simple.Utils (xargs)
 
 
 
@@ -41,13 +42,13 @@ instance Jsonable Bool where
   fromJson _            = Nothing
 
 instance Jsonable JString where
-  toJson s             = JString s
+  toJson s             = JsonString s
 
   fromJson (JString s) = Just s
   fromJson _           = Nothing
 
 instance Jsonable Integer where
-  toJson v             = JsonInt s
+  toJson v             = JsonInt v
 
   fromJson (JsonInt v) = Just v
   fromJson _           = Nothing
@@ -110,12 +111,51 @@ instance Jsonable a => Jsonable [a] where
   -} 
   toJson xs = JsonArray (map toJson xs)
 
-  fromJson (JsonArray xs) = (fmap fromJson xs)
+  fromJson (JsonArray xs) = foldr combine (Just []) xs 
+    where 
+      combine :: a -> a -> b
+      combine x acc = case (fromJson x) of
+        Just pased -> Just (parsed : rest)
+        _ -> Nothing
 
 data Matrix a = Matrix [[a]] deriving (Show, Eq)
 
-instance (Jsonable a, Ord a) => Jsonable (MS.MultiSet a)
-instance Jsonable a => Jsonable (Matrix a)
+instance (Jsonable a, Ord a) => Jsonable (MS.MultiSet a) where
+  toJson ms = 
+    let elements = nub (MS.toList ms)
+        elementCountPairs = map (\e -> (e, MS.count e ms)) elements
+    in JsonArray (map (\(x,y) -> JsonArray [toJson x, toJson y]) elementCountPairs)
+
+  fromJson (JsonArray jsonElements) = go jsonElements
+    where 
+      go [] = Just MS.empty 
+      go (JsonArray [elem, count]: rest) = 
+        case (fromJson elem, fromJson count, go rest) of
+          (Just element, Just countInt, Just restMultiSet) -> 
+            Just (addCountTimes element countInt restMultiSet)
+          _ -> Nothing
+      go _ = Nothing
+  fromJson _ = Nothing 
+
+addCountTimes :: Ord a => a -> Int -> MS.MultiSet a -> MS.MultiSet a
+addCountTimes element countInt multiset = 
+  foldr (\_ ms -> MS.insert element ms) multiset [1..countInt]
+          
+
+
+
+instance Jsonable a => Jsonable (Matrix a) where 
+  toJson (Matrix rows) = JsonArray (map (JsonArray . map toJson) rows)
+
+  fromJson (JsonArray jsonRows) = 
+    let maybeRows = map parseRow jsonRows
+        parseRow (JsonArray jsonCells) = sequence (map fromJson jsonCells)
+        parseRow _ = Nothing
+    in case sequence maybeRows of
+         Just rows -> Just (Matrix rows)
+         Nothing -> Nothing
+  fromJson _ = Nothing
+
 
 -- A sparse matrix is a more efficient representation of a matrix when most of the entries are zero.
 -- Note that zero values should not appear in the map.
@@ -126,7 +166,50 @@ data SparseMatrix a
   , entries :: Map.Map (Integer, Integer) a
   }
   deriving (Show, Eq)
-instance Jsonable a => Jsonable (SparseMatrix a)
+  
+instance Jsonable a => Jsonable (SparseMatrix a) where
+  toJson (SparseMatrix r c e) =
+    JsonObject (Map.fromList
+      [ ("rows", toJson r)
+      , ("cols", toJson c)
+      , ("entries", JsonArray
+          [ JsonObject (Map.fromList
+              [ ("row", toJson row)
+              , ("col", toJson col)
+              , ("value", toJson v)
+              ])
+          | ((row, col), v) <- Map.toList e
+          ])
+      ])
+  fromJson (JsonObject obj) = 
+    case (Map.lookup "rows" obj, Map.lookup "cols" obj, Map.lookup "entries" obj) of
+      (Just jr, Just jc, Just je) ->
+        case (fromJson jr, fromJson jc, fromJson je) of
+          (Just r, Just c, Just es) ->
+            -- Now you have r :: Integer, c :: Integer, es :: [(Integer, Integer, a)]
+            -- You can turn it into a Map here!
+            Just (SparseMatrix r c (Map.fromList [((i, j), v) | (i, j, v) <- es]))
+          _ -> Nothing
+      _ -> Nothing
+
+  fromJson _ = Nothing 
+
+instance (Jsonable a) => Jsonable (Integer, Integer, a) where
+  toJson (v1, v2, m) = JsonObject (Map.fromList
+    [ ("row", toJson v1)
+    , ("col", toJson v2)
+    , ("value", toJson m)
+    ])
+
+  fromJson (JsonObject obj) = 
+    case (Map.lookup "row" obj, Map.lookup "col" obj, Map.lookup "value" obj) of
+      (Just jr, Just jc, Just jv) -> 
+        case (fromJson jr, fromJson jc, fromJson jv) of 
+          (Just r, Just c, Just v) -> Just (r, c, v)
+          _                        -> Nothing 
+      _ -> Nothing
+
+  fromJson _ = Nothing
 
 data Tree a = Empty | Tree (Tree a) a (Tree a) deriving (Show, Eq)
 instance Jsonable a => Jsonable (Tree a)

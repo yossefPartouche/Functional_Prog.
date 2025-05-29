@@ -12,8 +12,6 @@ import Data.Semigroup (Arg (..))
 import Data.Set qualified as Set
 import Prelude (Bool (..), Char, Double, Either (..), Eq (..), Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
 import Distribution.Simple.Utils (xargs)
-import GHC.Internal.RTS.Flags (CCFlags(msecsPerTick))
-import GHC.Base (VecElem(Int16ElemRep))
 
 newtype MultiSet a = MultiSet {_getMultiset :: Set.Set (Arg a Int)}
 
