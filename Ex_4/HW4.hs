@@ -14,7 +14,7 @@ import Data.Map qualified as Map
 import Data.Maybe
 import MultiSet qualified as MS
 import Prelude (Bool (..), Char, Double, Either (..), Eq (..), Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
-import Distribution.Simple.Utils (xargs)
+--import Distribution.Simple.Utils (xargs)
 
 
 
@@ -238,28 +238,78 @@ data Expression
   | Div Expression Expression
   | Signum Expression
   deriving (Eq, Show)
-instance Num Expression
+
+instance Num Expression where
+  (+) = Plus
+  (-) = Minus
+  (*) = Mult
+  negate exp = Mult (Lit (-1)) exp
+  abs _ = error "abs is not supported for Expression"
+  signum exp = Signum exp
+  fromInteger n = Lit n
 
 newtype MatrixSum a = MatrixSum {getMS :: Matrix a} deriving (Show, Eq)
+
+matrixAdd :: Num a => Matrix a -> Matrix a -> Matrix a
+matrixAdd (Matrix one) (Matrix two) =
+  Matrix (zipWith (zipWith (+)) one two)
+
 newtype MatrixMult a = MatrixMult {getMM :: Matrix a} deriving (Show, Eq)
-instance Num a => Semigroup (MatrixSum a)
-instance Num a => Semigroup (MatrixMult a)
+
+matrixMul :: Num a => Matrix a -> Matrix a -> Matrix a 
+matrixMul (Matrix one) (Matrix two) = 
+  Matrix [[sum $ zipWith (*) row col | col <- transpose two] | row <- one] 
+
+instance Num a => Semigroup (MatrixSum a) where
+  MatrixSum one <> MatrixSum two = MatrixSum (matrixAdd one two)
+
+instance Num a => Semigroup (MatrixMult a) where
+  MatrixMult one <> MatrixMult two = MatrixMult (matrixMul one two)
 
 newtype SparseMatrixSum a = SparseMatrixSum {getSMS :: SparseMatrix a} deriving (Show, Eq)
+sparseMatrixAdd :: Num a => SparseMatrix a -> SparseMatrix a -> SparseMatrix a
+sparseMatrixAdd (SparseMatrix r _ one) (SparseMatrix _ c two) =
+  let
+    summed = Map.unionWith (+) one two
+    nonZero = Map.filter (/= 0) summed
+  in
+    SparseMatrix r c nonZero
+
 newtype SparseMatrixMult a = SparseMatrixMult {getSMM :: SparseMatrix a} deriving (Show, Eq)
+sparseMatrixMul :: (Num a, Eq a) => SparseMatrix a -> SparseMatrix a -> SparseMatrix a
+sparseMatrixMul (SparseMatrix r _ one) (SparseMatrix _ c two) =
+  let 
+    products = 
+      [ ((i, j), a * b)
+      | ((i, k1), a) <- Map.toList one
+      , ((k2, j), b) <- Map.toList two
+      , k1 == k2
+      ]
+    summed = Map.fromListWith (+) products
+    nonZero = Map.filter (/= 0) summed
+  in 
+    SparseMatrix r c nonZero
 
 -- These have Eq constraint so you can filter out zero values, which should not appear in sparse matrices.
-instance (Num a, Eq a) => Semigroup (SparseMatrixSum a)
-instance (Num a, Eq a) => Semigroup (SparseMatrixMult a)
+instance (Num a, Eq a) => Semigroup (SparseMatrixSum a) where 
+  SparseMatrixSum one <> SparseMatrixSum two = SparseMatrixSum (sparseMatrixAdd one two)
+
+instance (Num a, Eq a) => Semigroup (SparseMatrixMult a) where 
+  SparseMatrixMult one <> SparseMatrixMult two = SparseMatrixMult (sparseMatrixMul one two)
 
 -- Subsection: General functions
 evalPoly :: Num a => [a] -> Integer -> a
+evalPoly = undefined
 
 type Length = Int
 type I = Int
 type J = Int
 pathsOfLengthK :: Length -> I -> J -> Matrix Int -> Int
+pathsOfLengthK = undefined
 hasPath :: I -> J -> Matrix Int -> Bool
+hasPath = undefined
 -- Section 4: Simplify expressions
 simplify :: Expression -> Expression
+simplify = undefined
 inlineExpressions :: [(Expression, String)] -> [(Expression, String)]
+inlineExpressions = undefined
