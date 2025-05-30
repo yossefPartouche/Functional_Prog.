@@ -298,7 +298,6 @@ instance (Num a, Eq a) => Semigroup (SparseMatrixMult a) where
 evalPoly :: Num a => [a] -> a -> a
 evalPoly coeffs x = sum [c * x ^ i | (i, c) <- zip [0 :: Integer ..] coeffs]
 
-
 type Length = Int
 type I = Int
 type J = Int
@@ -367,9 +366,9 @@ inlineExpressions = go [] where
   go _ [] = []
   go env ((e, name):xs) =
     let simplified = simplify e
-        alt = changeDups env simplified 
-        updatedEnv = env ++ [(alt, name)]
-    in (alt, name) : go updatedEnv xs
+        alter = changeDups env simplified 
+        updatedEnv = env ++ [(alter, name)]
+    in (alter, name) : go updatedEnv xs
 
 changeDups :: [(Expression Integer, String)] -> Expression Integer -> Expression Integer
 changeDups env expr =

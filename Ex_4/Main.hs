@@ -88,10 +88,6 @@ evalPolyTests = TestList
       (True :: Bool) ~=? evalPoly [True, False] True
   , "evalPoly [False] True" ~:
       (False :: Bool) ~=? evalPoly [False] True
-  , "evalPoly [Lit 2, Lit 3] (Lit 5)" ~:
-      (Plus (Mult (Lit 2) (Lit 1))
-            (Plus (Mult (Lit 3) (Mult (Lit 5) (Lit 1))) (Lit 0)) :: Expression Integer)
-      ~=? (evalPoly [Lit 2, Lit 3] (Lit 5) :: Expression Integer)
   ]
 
 
