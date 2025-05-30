@@ -299,17 +299,90 @@ instance (Num a, Eq a) => Semigroup (SparseMatrixMult a) where
 
 -- Subsection: General functions
 evalPoly :: Num a => [a] -> Integer -> a
-evalPoly = undefined
+evalPoly nums x = sum [coefficient * (fromInteger x ^ i) | (i, coefficient) <- zip [0..] nums]
 
 type Length = Int
 type I = Int
 type J = Int
 pathsOfLengthK :: Length -> I -> J -> Matrix Int -> Int
-pathsOfLengthK = undefined
+pathsOfLengthK k i j m = getVal i j (matrixPower k m)
+
+getVal :: Int -> Int -> Matrix a -> a
+getVal i j (Matrix rows) = (rows !! i) !! j
+
+identityMatrix :: Num a => Int -> Matrix a
+identityMatrix n = Matrix [[if i == j then 1 else 0 | j <- [0..n-1]] | i <- [0..n-1]] 
+
+matrixPower :: Num a => Int -> Matrix a -> Matrix a
+matrixPower 0 (Matrix rows) = identityMatrix (length rows)
+matrixPower 1 m = m
+matrixPower k m = matrixMul m (matrixPower (k - 1) m)
+
 hasPath :: I -> J -> Matrix Int -> Bool
-hasPath = undefined
+hasPath i j m@(Matrix rows) =
+  or [ getVal i j (matrixPower k m) > 0 | k <- [1 .. length rows - 1] ]
+
 -- Section 4: Simplify expressions
 simplify :: Expression -> Expression
-simplify = undefined
+simplify (Plus e1 e2) = 
+  case (simplify e1, simplify e2) of
+    (Lit 0, e) -> e
+    (e, Lit 0) -> e
+    (Lit a, Lit b) -> Lit (a + b)
+    (exp1, exp2) -> Plus exp1 exp2
+    
+simplify (Minus e1 e2) =
+  case (simplify e1, simplify e2) of
+    (e, Lit 0) -> e
+    (Lit a, Lit b) -> Lit (a - b)
+    (exp1, exp2) -> Minus exp1 exp2
+
+simplify (Mult e1 e2) =
+  case (simplify e1, simplify e2) of
+    (Lit 1, e) -> e
+    (e, Lit 1) -> e
+    (Lit a, Lit b) -> Lit (a * b)
+    (exp1, exp2) -> Mult exp1 exp2
+
+simplify (Div e1 e2) =
+  case (simplify e1, simplify e2) of
+    (e, Lit 1) -> e
+    (Lit _, Lit 0) -> error "Cannot divide by zero"
+    (Lit a, Lit b) -> Lit (a `div` b)
+    (exp1, exp2) -> Div exp1 exp2
+
+simplify (Signum e) =
+  case simplify e of
+    Lit n -> Lit (signum n)
+    Mult a b -> Mult (simplify (Signum a)) (simplify (Signum b))
+    Div a b -> Div (simplify (Signum a)) (simplify (Signum b))
+    s -> Signum s
+
+simplify (Lit n) = Lit n
+simplify (Iden x) = Iden x
+
 inlineExpressions :: [(Expression, String)] -> [(Expression, String)]
-inlineExpressions = undefined
+inlineExpressions = go [] where
+  go _ [] = []
+  go env ((e, name):xs) =
+    let simplified = simplify e
+        inlined = changeDups env simplified
+        updatedEnv = env ++ [(inlined, name)]
+    in (inlined, name) : go updatedEnv xs
+
+changeDups :: [(Expression, String)] -> Expression -> Expression
+changeDups env expr =
+  case lookup expr env of
+    Just name -> Iden name
+    Nothing -> case expr of
+      Plus a b -> Plus (changeDups env a) (changeDups env b)
+      Minus a b -> Minus (changeDups env a) (changeDups env b)
+      Mult a b -> Mult (changeDups env a) (changeDups env b)
+      Div a b -> Div (changeDups env a) (changeDups env b)
+      Signum a -> Signum (changeDups env a)
+      _ -> expr
+  where
+    lookup e [] = Nothing
+    lookup e ((prevExpr, name):xs)
+      | e == prevExpr = Just name
+      | otherwise = lookup e xs
