@@ -263,7 +263,6 @@ runBFS maze destPos toVisit visited fromTo = case dequeue toVisit of
                     newToVisit = foldr enqueue restQueue newMoves
                     newVisited = foldr Set.insert visited newMoves
                 in runBFS maze destPos newToVisit newVisited newEdges
-                
 
 getPath :: [(CellPosition, CellPosition)] -> CellPosition -> [CellPosition]
 getPath edges curr = 

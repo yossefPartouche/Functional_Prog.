@@ -166,7 +166,7 @@ data SparseMatrix a
   , entries :: Map.Map (Integer, Integer) a
   }
   deriving (Show, Eq)
-  
+
 instance Jsonable a => Jsonable (SparseMatrix a) where
   toJson (SparseMatrix r c e) =
     JsonObject (Map.fromList
@@ -212,7 +212,18 @@ instance (Jsonable a) => Jsonable (Integer, Integer, a) where
   fromJson _ = Nothing
 
 data Tree a = Empty | Tree (Tree a) a (Tree a) deriving (Show, Eq)
-instance Jsonable a => Jsonable (Tree a)
+instance Jsonable a => Jsonable (Tree a) where
+  toJson (Empty) = JsonNull 
+  toJson (Tree l v r) =
+    JsonObject (Map.fromList [("Left", toJson l), ("Value", toJson v), ("Right", toJson r)]) 
+  
+  fromJson JsonNull = Just Empty
+  fromJson (JsonObject obj) = case (Map.lookup "Left" obj, Map.lookup "Value" obj, Map.lookup "Right" obj) of 
+    (Just jl, Just jv, Just jr) -> case (fromJson jl, fromJson jv, fromJson jr) of
+      (Just l, Just v, Just r) -> Just (Tree l v r)
+      _   -> Nothing
+    _     -> Nothing
+  fromJson _ = Nothing 
 
 -- Section 3: Num
 -- Subsection: Num instances
