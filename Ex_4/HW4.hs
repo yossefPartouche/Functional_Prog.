@@ -14,7 +14,7 @@ import Data.Map qualified as Map
 import Data.Maybe
 import MultiSet qualified as MS
 import Prelude (Bool (..), Char, Double, Either (..), Eq (..), Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
---import Distribution.Simple.Utils (xargs)
+import Distribution.Simple.Utils (xargs)
 
 
 
@@ -213,26 +213,37 @@ instance Jsonable a => Jsonable (Tree a) where
 
 -- Section 3: Num
 -- Subsection: Num instances
-instance Num Bool
+xor :: Bool -> Bool -> Bool
+xor a b = (a || b) && not (a && b)
 
-data Expression
+instance Num Bool where
+  (+) = xor
+  (*) = (&&)
+  (-) a b = a && not b
+  abs = id
+  signum = id
+  fromInteger 0 = False
+  fromInteger n = n `mod` 2 == 1
+  negate = not
+
+data Expression a
   = Iden String
-  | Lit Integer
-  | Plus Expression Expression
-  | Minus Expression Expression
-  | Mult Expression Expression
-  | Div Expression Expression
-  | Signum Expression
+  | Lit a
+  | Plus (Expression a) (Expression a)
+  | Minus (Expression a) (Expression a)
+  | Mult (Expression a) (Expression a)
+  | Div (Expression a) (Expression a)
+  | Signum (Expression a)
   deriving (Eq, Show)
 
-instance Num Expression where
+instance Num a => Num (Expression a) where
   (+) = Plus
   (-) = Minus
   (*) = Mult
   negate exp = Mult (Lit (-1)) exp
   abs _ = error "abs is not supported for Expression"
   signum exp = Signum exp
-  fromInteger n = Lit n
+  fromInteger n = Lit (fromInteger n)
 
 newtype MatrixSum a = MatrixSum {getMS :: Matrix a} deriving (Show, Eq)
 
@@ -253,7 +264,7 @@ instance Num a => Semigroup (MatrixMult a) where
   MatrixMult one <> MatrixMult two = MatrixMult (matrixMul one two)
 
 newtype SparseMatrixSum a = SparseMatrixSum {getSMS :: SparseMatrix a} deriving (Show, Eq)
-sparseMatrixAdd :: Num a => SparseMatrix a -> SparseMatrix a -> SparseMatrix a
+sparseMatrixAdd :: (Num a, Eq a) => SparseMatrix a -> SparseMatrix a -> SparseMatrix a
 sparseMatrixAdd (SparseMatrix r _ one) (SparseMatrix _ c two) =
   let
     summed = Map.unionWith (+) one two
@@ -284,8 +295,9 @@ instance (Num a, Eq a) => Semigroup (SparseMatrixMult a) where
   SparseMatrixMult one <> SparseMatrixMult two = SparseMatrixMult (sparseMatrixMul one two)
 
 -- Subsection: General functions
-evalPoly :: Num a => [a] -> Integer -> a
-evalPoly nums x = sum [coefficient * (fromInteger x ^ i) | (i, coefficient) <- zip [0..] nums]
+evalPoly :: Num a => [a] -> a -> a
+evalPoly coeffs x = sum [c * x ^ i | (i, c) <- zip [0 :: Integer ..] coeffs]
+
 
 type Length = Int
 type I = Int
@@ -304,12 +316,16 @@ matrixPower 0 (Matrix rows) = identityMatrix (length rows)
 matrixPower 1 m = m
 matrixPower k m = matrixMul m (matrixPower (k - 1) m)
 
+ourOr :: [Bool] -> Bool
+ourOr [] = False
+ourOr (x:xs) = x || ourOr xs
+
 hasPath :: I -> J -> Matrix Int -> Bool
 hasPath i j m@(Matrix rows) =
-  or [ getVal i j (matrixPower k m) > 0 | k <- [1 .. length rows - 1] ]
+  ourOr [ getVal i j (matrixPower k m) > 0 | k <- [1 .. length rows - 1] ]
 
 -- Section 4: Simplify expressions
-simplify :: Expression -> Expression
+simplify :: (Expression Integer) -> (Expression Integer)
 simplify (Plus e1 e2) = 
   case (simplify e1, simplify e2) of
     (Lit 0, e) -> e
@@ -333,8 +349,7 @@ simplify (Mult e1 e2) =
 simplify (Div e1 e2) =
   case (simplify e1, simplify e2) of
     (e, Lit 1) -> e
-    (Lit _, Lit 0) -> error "Cannot divide by zero"
-    (Lit a, Lit b) -> Lit (a `div` b)
+    (Lit a, Lit b) -> if b == 0 then Div (Lit a) (Lit b) else Lit (a `div` b)
     (exp1, exp2) -> Div exp1 exp2
 
 simplify (Signum e) =
@@ -347,18 +362,18 @@ simplify (Signum e) =
 simplify (Lit n) = Lit n
 simplify (Iden x) = Iden x
 
-inlineExpressions :: [(Expression, String)] -> [(Expression, String)]
+inlineExpressions :: [(Expression Integer, String)] -> [(Expression Integer, String)]
 inlineExpressions = go [] where
   go _ [] = []
   go env ((e, name):xs) =
     let simplified = simplify e
-        inlined = changeDups env simplified
-        updatedEnv = env ++ [(inlined, name)]
-    in (inlined, name) : go updatedEnv xs
+        alt = changeDups env simplified 
+        updatedEnv = env ++ [(alt, name)]
+    in (alt, name) : go updatedEnv xs
 
-changeDups :: [(Expression, String)] -> Expression -> Expression
+changeDups :: [(Expression Integer, String)] -> Expression Integer -> Expression Integer
 changeDups env expr =
-  case lookup expr env of
+  case searchFor expr env of
     Just name -> Iden name
     Nothing -> case expr of
       Plus a b -> Plus (changeDups env a) (changeDups env b)
@@ -368,7 +383,7 @@ changeDups env expr =
       Signum a -> Signum (changeDups env a)
       _ -> expr
   where
-    lookup e [] = Nothing
-    lookup e ((prevExpr, name):xs)
+    searchFor _ [] = Nothing
+    searchFor e ((prevExpr, name):xs)
       | e == prevExpr = Just name
-      | otherwise = lookup e xs
+      | otherwise = searchFor e xs
