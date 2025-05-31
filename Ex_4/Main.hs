@@ -2,6 +2,8 @@ import Test.HUnit
 import Data.Map (fromList)
 import Data.List (transpose)
 import HW4
+import MultiSet qualified as MS
+
 
 -- Assume all relevant data types and functions have been imported:
 -- Matrix, SparseMatrix, Expression, MatrixSum, MatrixMult, SparseMatrixSum, SparseMatrixMult, etc.
@@ -141,6 +143,57 @@ inlineExprTests = TestList
                       (Plus (Iden "z") (Iden "w")), "r")
               ]
   ]
+jsonTests :: Test
+jsonTests = TestList
+  [ "Bool to/from JSON" ~:
+      Just True ~=? (fromJson (toJson True) :: Maybe Bool)
+
+  , "JString to/from JSON" ~:
+      Just (JString "hello") ~=? (fromJson (toJson (JString "hello")) :: Maybe JString)
+
+  , "Integer to/from JSON" ~:
+      Just (42 :: Integer) ~=? (fromJson (toJson (42 :: Integer)) :: Maybe Integer)
+
+  , "Double to/from JSON" ~:
+      Just (3.14 :: Double) ~=? (fromJson (toJson (3.14 :: Double)) :: Maybe Double)
+
+  , "Tuple (Bool, Integer)" ~:
+      Just (False, 99 :: Integer)
+        ~=? (fromJson (toJson (False, 99 :: Integer)) :: Maybe (Bool, Integer))
+
+  , "Triple (Bool, JString, Integer)" ~:
+      Just (True, JString "yo", 7 :: Integer)
+        ~=? (fromJson (toJson (True, JString "yo", 7 :: Integer)) :: Maybe (Bool, JString, Integer))
+
+  , "Maybe Integer (Just)" ~:
+      Just (Just (123 :: Integer))
+        ~=? (fromJson (toJson (Just (123 :: Integer))) :: Maybe (Maybe Integer))
+
+  , "Maybe Integer (Nothing)" ~:
+      Just Nothing ~=? (fromJson (toJson (Nothing :: Maybe Integer)) :: Maybe (Maybe Integer))
+
+  , "Either Integer JString (Left)" ~:
+      let val = (Left (10 :: Integer) :: Either Integer JString)
+       in Just val ~=? (fromJson (toJson val) :: Maybe (Either Integer JString))
+
+  , "Either Integer JString (Right)" ~:
+      let val = (Right (JString "abc") :: Either Integer JString)
+       in Just val ~=? (fromJson (toJson val) :: Maybe (Either Integer JString))
+
+  , "List of Integers" ~:
+      Just [1, 2, 3] ~=? (fromJson (toJson ([1,2,3] :: [Integer])) :: Maybe [Integer])
+
+  , "List of JStrings" ~:
+      Just [JString "a", JString "b"]
+        ~=? (fromJson (toJson [JString "a", JString "b"]) :: Maybe [JString])
+
+  , "Matrix of Integer" ~:
+      let m = Matrix [[1, 2], [3, 4]] :: Matrix Integer
+       in Just m ~=? (fromJson (toJson m) :: Maybe (Matrix Integer))
+  ]
+
+
+
 
 -- Run all tests
 allTests :: Test
@@ -155,6 +208,7 @@ allTests = TestList
   , hasPathTests
   , simplifyTests
   , inlineExprTests
+  , jsonTests 
   ]
 
 
