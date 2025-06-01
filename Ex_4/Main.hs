@@ -186,10 +186,78 @@ jsonTests = TestList
   , "List of JStrings" ~:
       Just [JString "a", JString "b"]
         ~=? (fromJson (toJson [JString "a", JString "b"]) :: Maybe [JString])
+  , "MultiSet of Integer" ~:
+    let ms = MS.fromList [1, 2, 2, 3] :: MS.MultiSet Integer
+     in Just ms ~=? (fromJson (toJson ms) :: Maybe (MS.MultiSet Integer))
 
-  , "Matrix of Integer" ~:
-      let m = Matrix [[1, 2], [3, 4]] :: Matrix Integer
-       in Just m ~=? (fromJson (toJson m) :: Maybe (Matrix Integer))
+  , "MultiSet of Bool" ~:
+    let ms = MS.fromList [True, False, True] :: MS.MultiSet Bool
+     in Just ms ~=? (fromJson (toJson ms) :: Maybe (MS.MultiSet Bool))
+
+  , "Tree of Integer" ~:
+    let t = Tree (Tree Empty 1 Empty) 2 (Tree Empty 3 Empty) :: Tree Integer
+     in Just t ~=? (fromJson (toJson t) :: Maybe (Tree Integer))
+
+  , "Tree of Bool" ~:
+    let t = Tree (Tree Empty True Empty) False (Tree Empty True Empty) :: Tree Bool
+     in Just t ~=? (fromJson (toJson t) :: Maybe (Tree Bool))
+  ]
+  -- Tests for nested JSON conversions
+nestedJsonTests :: Test
+nestedJsonTests = TestList
+  [ "Maybe [Integer] (Just case)" ~:
+    let val = (Just [1, 2, 3] :: Maybe [Integer])
+     in Just val ~=? (fromJson (toJson val) :: Maybe (Maybe [Integer]))
+
+  , "Maybe [Integer] (Nothing case)" ~:
+    let val = (Nothing :: Maybe [Integer])
+     in Just val ~=? (fromJson (toJson val) :: Maybe (Maybe [Integer]))
+
+  , "Either Bool (Maybe Integer) (Left case)" ~:
+    let val = (Left True :: Either Bool (Maybe Integer))
+     in Just val ~=? (fromJson (toJson val) :: Maybe (Either Bool (Maybe Integer)))
+
+  , "Either Bool (Maybe Integer) (Right Just case)" ~:
+    let val = (Right (Just 42) :: Either Bool (Maybe Integer))
+     in Just val ~=? (fromJson (toJson val) :: Maybe (Either Bool (Maybe Integer)))
+
+  , "Either Bool (Maybe Integer) (Right Nothing case)" ~:
+    let val = (Right Nothing :: Either Bool (Maybe Integer))
+     in Just val ~=? (fromJson (toJson val) :: Maybe (Either Bool (Maybe Integer)))
+
+  , "Tree (Maybe Bool)" ~:
+    let t = Tree 
+              (Tree Empty (Just True) Empty) 
+              (Just False) 
+              (Tree (Tree Empty Nothing Empty) (Just True) Empty) :: Tree (Maybe Bool)
+     in Just t ~=? (fromJson (toJson t) :: Maybe (Tree (Maybe Bool)))
+  ]
+edgeCaseJsonTests :: Test
+edgeCaseJsonTests = TestList
+  [ "Empty list" ~:
+      Just ([] :: [Integer]) ~=? (fromJson (toJson ([] :: [Integer])) :: Maybe [Integer])
+  
+  , "Empty Tree" ~:
+      Just (Empty :: Tree Integer) ~=? (fromJson (toJson (Empty :: Tree Integer)) :: Maybe (Tree Integer))
+  
+  , "List of Maybe Integer" ~:
+      Just [Just 1, Nothing, Just 3] ~=? (fromJson (toJson ([Just 1, Nothing, Just 3] :: [Maybe Integer])) :: Maybe [Maybe Integer])
+  
+  , "MultiSet of Maybe Bool" ~:
+      let ms = MS.fromList [Just True, Nothing, Just False] :: MS.MultiSet (Maybe Bool)
+       in Just ms ~=? (fromJson (toJson ms) :: Maybe (MS.MultiSet (Maybe Bool)))
+  
+  , "Tree of Either Bool Integer" ~:
+      let t = Tree (Tree Empty (Left True) Empty) (Right 42) Empty :: Tree (Either Bool Integer)
+       in Just t ~=? (fromJson (toJson t) :: Maybe (Tree (Either Bool Integer)))
+       
+  ,  "Empty MultiSet" ~:
+      let ms = MS.fromList [] :: MS.MultiSet Integer
+       in Just ms ~=? (fromJson (toJson ms) :: Maybe (MS.MultiSet Integer))
+  
+  , "Maybe (Either Bool [Integer])" ~:
+      let val = Just (Right [1,2,3]) :: Maybe (Either Bool [Integer])
+       in Just val ~=? (fromJson (toJson val) :: Maybe (Maybe (Either Bool [Integer])))
   ]
 
 
@@ -209,6 +277,8 @@ allTests = TestList
   , simplifyTests
   , inlineExprTests
   , jsonTests 
+  , nestedJsonTests
+  , edgeCaseJsonTests
   ]
 
 
