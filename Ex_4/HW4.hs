@@ -236,12 +236,12 @@ data Expression a
   | Signum (Expression a)
   deriving (Eq, Show)
 
+-- As Num class has {-# MINIMAL (+), (*), abs, signum, fromInteger, (negate | (-)) #-} we only implemented (-) and not negate
 instance Num a => Num (Expression a) where
   (+) = Plus
   (-) = Minus
   (*) = Mult
-  negate exp = Mult (Lit (-1)) exp
-  abs _ = error "abs is not supported for Expression"
+  abs _ = error "abs is not supported for Expression" -- We could have added Abs to expression but that would have been to alter given code so we decided to send error in this case and not add a constructor to the data type
   signum exp = Signum exp
   fromInteger n = Lit (fromInteger n)
 
@@ -294,9 +294,16 @@ instance (Num a, Eq a) => Semigroup (SparseMatrixSum a) where
 instance (Num a, Eq a) => Semigroup (SparseMatrixMult a) where 
   SparseMatrixMult one <> SparseMatrixMult two = SparseMatrixMult (sparseMatrixMul one two)
 
+-- helper function for evalPoly (to allow for calculating power of expressions and numbers)
+pow :: Num a => a -> Integer -> a
+pow _ 0 = fromInteger 1
+pow num p = num * pow num (p - 1)
+
 -- Subsection: General functions
 evalPoly :: Num a => [a] -> a -> a
-evalPoly coeffs x = sum [c * x ^ i | (i, c) <- zip [0 :: Integer ..] coeffs]
+evalPoly coeff x = foldr addNum (fromInteger 0) (zip [0 :: Integer ..] coeff)
+  where
+    addNum (i, c) total = (c * pow x i) + total
 
 type Length = Int
 type I = Int
