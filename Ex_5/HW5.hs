@@ -43,7 +43,11 @@ maxBy f = foldr go Nothing
     go x Nothing  = Just x
     go x (Just y) = Just (if f x > f y then x else y)
 minimum :: (Foldable t, Ord a) => t a -> Maybe a
-minimum = fmap (\(Down x) -> x) . maximum . fmap Down
+minimum = foldr go Nothing
+  where
+    go x Nothing  = Just x
+    go x (Just y) = Just (if x < y then x else y)
+
 minBy :: (Foldable t, Ord b) => (a -> b) -> t a -> Maybe a
 minBy f = foldr go Nothing
   where 
@@ -56,8 +60,6 @@ sum = getSum . foldMap Sum
 product :: (Foldable t, Num a) => t a -> a
 product = getProduct . foldMap Product
 concatMap :: Foldable t => (a -> [b]) -> t a -> [b]
---concatMap f xs = foldMap f xs
--- concatMap f = foldMap f
 concatMap = foldMap 
 
 -- Section 2: Composing folds
@@ -65,53 +67,62 @@ data Fold a b c = Fold (b -> a -> b) b (b -> c)
 
 -- Instances + helpers
 
-instance Functor (Fold a b) where
+--instance Functor (Fold a b) where
 
 combine :: Fold a b c -> Fold a b' c' -> Fold a (b, b') (c, c')
+combine = undefined
 
 combineWith :: (c -> c' -> d) -> Fold a b c -> Fold a b' c' -> Fold a (b, b') d
-
+combineWith = undefined
 -- Execute a fold operation as a left fold.
 runFold :: Foldable t => Fold a b c -> t a -> c
-
+runFold = undefined
 -- Will only fold over elements that satisfy a predicate
 filterF :: (a -> Bool) -> Fold a b c -> Fold a b c
-
+filterF = undefined
 -- Applies a function to each elements before applying the step function
 mapF :: (a -> a) -> Fold a b c -> Fold a b c -- Not to be confused with fmap!
+mapF = undefined
 
 nullF :: Fold a b Bool
-
+nullF = undefined
 findF :: (a -> Bool) -> Fold a (Maybe a) (Maybe a)
-
+findF = undefined
 topKF :: Ord a => Int -> Fold a b [a]
-
+topKF = undefined
 -- Mathematical folds. Use combineWith to implement average from the basic ones!
 sumF :: Num a => Fold a a a
-
+sumF = undefined
 productF :: Num a => Fold a a a
-
+productF = undefined
 lengthF :: Fold a Int Int
-
+lengthF = undefined
 averageF :: Fractional a => Fold a (a, Int) a
-
+averageF = undefined
 
 
 -- Section 3: Functor functions
 
 fmapToFst :: Functor f => (a -> b) -> f a -> f (b, a)
+fmapToFst = undefined
 
 fmapToSnd :: Functor f => (a -> b) -> f a -> f (a, b)
+fmapToSnd = undefined
 
 strengthenL :: Functor f => b -> f a -> f (b, a)
+strengthenL = undefined
 
 strengthenR :: Functor f => b -> f a -> f (a, b)
+strengthenR = undefined
 
 unzip :: Functor f => f (a, b) -> (f a, f b)
+unzip =  undefined
 
 coUnzip :: Functor f => Either (f a) (f b) -> f (Either a b)
+coUnzip = undefined
 
 -- Section 4: MultiSet Foldable instances
+{-
 newtype FoldOccur a = FoldOccur {getFoldOccur :: MultiSet a}
 
 instance Foldable FoldOccur where
@@ -123,6 +134,7 @@ instance Foldable MinToMax
 
 newtype MaxToMin a = MaxToMin {getMaxToMin :: MultiSet a}
 instance Foldable MaxToMin
+-}
 
 -- Bonus section
 {-

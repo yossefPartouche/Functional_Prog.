@@ -10,9 +10,10 @@ import Data.Map qualified as Map
 import Data.Maybe
 import Data.Semigroup (Arg (..))
 import Data.Set qualified as Set
-import Prelude (Bool (..), Char, Double, Either (..), Eq (..), Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
-
+import Prelude (Bool (..), Char, Double, Either (..), Eq (..),Foldable, Int, Integer, Integral, Maybe (..), Monoid (..), Num (..), Ord (..), Semigroup (..), Show (..), String, all, const, div, drop, error, filter, foldl', foldr, id, init, iterate, length, lookup, map, mod, not, otherwise, product, replicate, reverse, sum, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (^), (||))
+--remove Foldable
 newtype MultiSet a = MultiSet {_getMultiset :: Set.Set (Arg a Int)}
+
 empty :: MultiSet a
 empty = MultiSet Set.empty
 
@@ -26,8 +27,6 @@ count :: Ord a => a -> MultiSet a -> Int
 count x (MultiSet ms)  = case lookupS x ms of
     Nothing          -> 0
     Just (Arg _ n)   -> n
-
-
 
 -- | Insert one occurrence of an element into the multiset.
 insert :: Ord a => a -> MultiSet a -> MultiSet a
@@ -54,9 +53,18 @@ fromList = foldr insert empty
 toList :: Ord a => MultiSet a -> [a]
 toList xs = flattenDup $ Set.toList (_getMultiset xs)
 
+flattenDup :: [(Arg a Int)] -> [a]
+flattenDup [] = []
+flattenDup (Arg x c: rest) = replicate c x ++ flattenDup rest
+
+lookupS :: Ord a => a -> Set.Set (Arg a Int) -> Maybe (Arg a Int)
+lookupS e s = 
+    case Set.lookupGE (Arg e 0) s of
+    Just (Arg y n) | e == y -> Just (Arg y n)
+    _                       -> Nothing
+
 instance Eq a => Eq (MultiSet a) where
     (MultiSet xs) == (MultiSet xs') = xs == xs'
-    
 {-
 -- Might be too much
 instance Eq a => Eq (MultiSet a) where
@@ -68,15 +76,17 @@ instance Eq a => Eq (MultiSet a) where
 -}
 instance Show a => Show (MultiSet a) where
     show xs = "{" ++ intercalate "," (map show (flattenDup $ Set.toList (_getMultiset xs))) ++ "}"
+
 instance Ord a => Semigroup (MultiSet a) where
-        xs <> xs' = fromList $ toList xs ++ toList xs'
+    xs <> xs' = fromList $ toList xs ++ toList xs'
+
 instance Ord a => Monoid (MultiSet a) where
     mempty = empty
 
 ---------------- Ex. 5 --------------------- 
 instance Foldable MultiSet where
     foldr f z ms = foldOccur (\x cnt acc -> foldr f acc (replicate cnt x)) z ms
-    
+
 -- | /O(n)/. 
 -- Fold over the elements of a multiset with their occurrences.
 foldOccur :: (a -> Int -> b -> b) -> b -> MultiSet a -> b
