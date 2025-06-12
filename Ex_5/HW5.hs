@@ -22,31 +22,44 @@ import Prelude (Bool (..), Char, Either (..), Enum (..), Eq (..), Foldable (fold
 
 -- Section 1: Foldable functions
 fold :: (Foldable t, Monoid a) => t a -> a
-fold = undefined
+fold = foldMap id
 toList :: Foldable t => t a -> [a]
-toList = undefined
+toList = foldMap (:[])
 elem :: (Foldable t, Eq a) => a -> t a -> Bool
-elem = undefined
+elem x = getAny.foldMap (\y -> Any (x == y))
 find :: (Foldable t, Eq a) => (a -> Bool) -> t a -> Maybe a
-find  = undefined
+find f = getFirst.foldMap (\x -> if f x then First (Just x) else First Nothing)
 length :: Foldable t => t a -> Int
-length = undefined
+length  = getSum.foldMap (const (Sum 1))
 null :: Foldable t => t a -> Bool
-null = undefined
+null xs = length xs == 0
 maximum :: (Foldable t, Ord a) => t a -> Maybe a
-maximum = undefined
+maximum = foldr go Nothing
+  where 
+    go x Nothing  = Just x
+    go x (Just y) = Just (if x > y then x else y)
 maxBy :: (Foldable t, Ord b) => (a -> b) -> t a -> Maybe a
-maxBy = undefined
+maxBy f = foldr go Nothing
+  where 
+    go x Nothing  = Just x
+    go x (Just y) = Just (if f x > f y then x else y)
 minimum :: (Foldable t, Ord a) => t a -> Maybe a
-minimum = undefined
+minimum = fmap (\(Down x) -> x) . maximum . fmap Down
 minBy :: (Foldable t, Ord b) => (a -> b) -> t a -> Maybe a
-minBy = undefined
+minBy f = foldr go Nothing
+  where 
+    go x Nothing  = Just x
+    go x (Just y) = Just (if f x > f y then y else x)
 sum :: (Foldable t, Num a) => t a -> a
-sum  = undefined
+--sum xs = foldr (\x acc -> x + acc) 0 xs
+-- sum xs = foldr (+) 0
+sum = getSum . foldMap Sum
 product :: (Foldable t, Num a) => t a -> a
-product = undefined
+product = getProduct . foldMap Product
 concatMap :: Foldable t => (a -> [b]) -> t a -> [b]
-concatMap = undefined
+--concatMap f xs = foldMap f xs
+-- concatMap f = foldMap f
+concatMap = foldMap 
 
 -- Section 2: Composing folds
 data Fold a b c = Fold (b -> a -> b) b (b -> c)
@@ -101,7 +114,9 @@ coUnzip :: Functor f => Either (f a) (f b) -> f (Either a b)
 
 -- Section 4: MultiSet Foldable instances
 newtype FoldOccur a = FoldOccur {getFoldOccur :: MultiSet a}
-instance Foldable FoldOccur
+instance Foldable FoldOccur where
+  foldMap :: Monoid m => (a -> m) -> FoldOccur a -> m 
+  foldMap f (FoldOccur ms) = foldOccur (\element count acc -> acc <> stimes count (f element)) mempty ms
 
 newtype MinToMax a = MinToMax {getMinToMax :: MultiSet a}
 instance Foldable MinToMax
