@@ -15,7 +15,6 @@ import Data.Maybe
 import Data.Monoid (All (..), Any (..), First (..), Last (..), Product (..), Sum (..))
 import Data.Ord (Down (..))
 import Data.Semigroup (Arg (..), Max (..), Min (..))
-import Data.Set (Set)
 import Data.Set qualified as S
 import MultiSet
 import Prelude (Bool (..), Char, Either (..), Enum (..), Eq (..), Foldable (foldMap, foldl, foldr), Fractional, Functor (fmap), Int, Maybe (..), Monoid (..), Num (..), Ord (..), Ordering (..), Semigroup (..), Show (..), String, all, and, any, concat, concatMap, const, curry, drop, dropWhile, error, filter, flip, fst, id, init, map, not, or, replicate, reverse, snd, take, takeWhile, uncurry, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (||))
@@ -49,7 +48,7 @@ maxBy f = foldr go Nothing
     go x (Just y) = Just (if f x > f y then x else y)
 
 minimum :: (Foldable t, Ord a) => t a -> Maybe a
-minimum = fmap (\Down x -> x).maximum.fmap Down
+minimum = fmap (\(Down x) -> x) . maximum . fmap Down
 
 minBy :: (Foldable t, Ord b) => (a -> b) -> t a -> Maybe a
 minBy f = foldr go Nothing
@@ -114,19 +113,27 @@ strengthenR :: Functor f => b -> f a -> f (a, b)
 unzip :: Functor f => f (a, b) -> (f a, f b)
 coUnzip :: Functor f => Either (f a) (f b) -> f (Either a b)
 -}
+
 -- Section 4: MultiSet Foldable instances
-{-
+
 newtype FoldOccur a = FoldOccur {getFoldOccur :: MultiSet a}
-instance Foldable FoldOccur
+instance Foldable FoldOccur where
+  foldMap :: Monoid m => (a -> m) -> FoldOccur a -> m 
+  foldMap f (FoldOccur ms) = foldOccur (\element count acc -> acc <> stimes count (f element)) mempty ms
 
 newtype MinToMax a = MinToMax {getMinToMax :: MultiSet a}
-instance Ord a => Foldable MinToMax
+instance Ord a => Foldable MinToMax where 
+    foldMap :: Monoid m => (a -> m) -> MinToMax a -> m 
+    foldMap f (MinToMax ms) = foldMap f (sort (toList ms))
+  
 
 newtype MaxToMin a = MinToMax {getMinToMax :: MultiSet a}
-instance Ord a => Foldable MaxToMin
+instance Ord a => Foldable MaxToMin where
+  foldMap :: Monoid m => (a -> m) -> MinToMax a -> m 
+  foldMap f (MinToMax ms) = foldMap f (sort (map Down toList ms)) >>= \(Down x) 
 
 -- Bonus section
-
+{-
 newtype ZipList a = ZipList {getZipList :: [a]} deriving (Show, Eq)
 
 instance Semigroup a => Semigroup (ZipList a)

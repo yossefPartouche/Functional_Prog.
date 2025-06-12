@@ -19,7 +19,6 @@ import Data.Foldable (Foldable)
 --import Distribution.Simple.Utils (xargs)
 
 newtype MultiSet a = MultiSet {_getMultiset :: Set.Set (Arg a Int)}
-
 empty :: MultiSet a
 empty = MultiSet Set.empty
 
@@ -89,15 +88,14 @@ instance Ord a => Semigroup (MultiSet a) where
 instance Ord a => Monoid (MultiSet a) where
     mempty = empty
 
-
-
-
 ---------------- Ex. 5 --------------------- 
---Not Yet
---instance Foldable MultiSet where
+instance Foldable MultiSet where
+    foldr f z ms = foldOccur (\x cnt acc -> foldr f acc (replicate cnt x)) z ms
+   
 
-
--- | /O(n)/. Fold over the elements of a multiset with their occurrences.
---foldOccur :: (a -> Int -> b -> b) -> b -> MultiSet a -> b
---foldOccur = undefined
-
+-- | /O(n)/. 
+-- Fold over the elements of a multiset with their occurrences.
+foldOccur :: (a -> Int -> b -> b) -> b -> MultiSet a -> b
+foldOccur _ b (MultiSet ms) | Set.null ms = b
+foldOccur f b (MultiSet ms) = 
+    Set.foldr (\(Arg x cnt) acc -> f x cnt acc) b ms
