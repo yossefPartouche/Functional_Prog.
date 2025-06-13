@@ -67,59 +67,97 @@ data Fold a b c = Fold (b -> a -> b) b (b -> c)
 
 -- Instances + helpers
 
---instance Functor (Fold a b) where
+instance Functor (Fold a b) where
+    fmap f (Fold step start finish) = Fold step start (f . finish)
 
 combine :: Fold a b c -> Fold a b' c' -> Fold a (b, b') (c, c')
-combine = undefined
+combine (Fold step1 start1 finish1) (Fold step2 start2 finish2) =
+    Fold step (start1, start2) finish
+    where
+        step (s1, s2) a = (step1 s1 a, step2 s2 a)
+        finish (s1, s2) = (finish1 s1, finish2 s2)
+
 
 combineWith :: (c -> c' -> d) -> Fold a b c -> Fold a b' c' -> Fold a (b, b') d
-combineWith = undefined
+combineWith finish (Fold step1 start1 finish1) (Fold step2 start2 finish2) =
+    Fold step (start1, start2) done
+    where
+        step (s1, s2) a = (step1 s1 a, step2 s2 a)
+        done (s1, s2) = finish (finish1 s1) (finish2 s2)
+
 -- Execute a fold operation as a left fold.
 runFold :: Foldable t => Fold a b c -> t a -> c
-runFold = undefined
+runFold (Fold step start done) rest = done (foldl step start rest)
+
 -- Will only fold over elements that satisfy a predicate
 filterF :: (a -> Bool) -> Fold a b c -> Fold a b c
-filterF = undefined
+filterF f (Fold step start done) = Fold customStep start done 
+    where
+        customStep b a = if f a then step b a else b
+
 -- Applies a function to each elements before applying the step function
 mapF :: (a -> a) -> Fold a b c -> Fold a b c -- Not to be confused with fmap!
-mapF = undefined
+mapF f (Fold step start done) = Fold customStep start done 
+  where 
+    customStep b a = step b (f a)
 
-nullF :: Fold a b Bool
-nullF = undefined
+nullF :: Fold a Bool Bool
+nullF = Fold step True id
+  where
+    step elem _ = False
+
 findF :: (a -> Bool) -> Fold a (Maybe a) (Maybe a)
-findF = undefined
-topKF :: Ord a => Int -> Fold a b [a]
-topKF = undefined
+findF f = Fold step Nothing id 
+    where 
+        step Nothing a = if f a then Just a else Nothing
+        step (Just val) _ = Just val
+
+topKF :: Ord a => Int -> Fold a [a] [a]
+topKF k = Fold step [] done
+  where
+    step acc x = x : acc                   
+    done acc = take k (reverse (sort acc)) 
+
 -- Mathematical folds. Use combineWith to implement average from the basic ones!
 sumF :: Num a => Fold a a a
-sumF = undefined
+sumF = Fold step 0 id
+  where
+    step acc x = acc + x
+
 productF :: Num a => Fold a a a
-productF = undefined
+productF = Fold step 1 id 
+    where 
+        step acc x = acc * x 
+
 lengthF :: Fold a Int Int
-lengthF = undefined
+lengthF = Fold step 0 id 
+    where 
+        step acc _ = acc + 1 -- counts each "step" taken = how many elements = length
+
 averageF :: Fractional a => Fold a (a, Int) a
-averageF = undefined
+averageF = combineWith (\s n -> s / fromIntegral n) sumF lengthF
 
 
 -- Section 3: Functor functions
 
 fmapToFst :: Functor f => (a -> b) -> f a -> f (b, a)
-fmapToFst = undefined
+fmapToFst f = fmap (\a -> (f a, a))
 
 fmapToSnd :: Functor f => (a -> b) -> f a -> f (a, b)
-fmapToSnd = undefined
+fmapToSnd f = fmap (\a -> (a, f a))
 
 strengthenL :: Functor f => b -> f a -> f (b, a)
-strengthenL = undefined
+strengthenL x = fmap (\a -> (x, a))
 
 strengthenR :: Functor f => b -> f a -> f (a, b)
-strengthenR = undefined
+strengthenR x = fmap (\a -> (a, x))
 
 unzip :: Functor f => f (a, b) -> (f a, f b)
-unzip =  undefined
+unzip x = (fmap fst x, fmap snd x)
 
 coUnzip :: Functor f => Either (f a) (f b) -> f (Either a b)
-coUnzip = undefined
+coUnzip (Left fa)  = fmap Left fa
+coUnzip (Right fb) = fmap Right fb
 
 -- Section 4: MultiSet Foldable instances
 {-
