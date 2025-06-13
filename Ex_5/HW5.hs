@@ -182,7 +182,7 @@ instance Foldable MaxToMin
 -}
 
 -- Bonus section
-{-
+
 newtype ZipList a = ZipList {getZipList :: [a]} deriving (Show, Eq)
 
 instance Semigroup a => Semigroup (ZipList a)
