@@ -30,8 +30,7 @@ elem :: (Foldable t, Eq a) => a -> t a -> Bool
 elem x = getAny.foldMap (\y -> Any (x == y))
 
 find :: (Foldable t, Eq a) => (a -> Bool) -> t a -> Maybe a
-find f = getFirst.foldMap (\x -> if f x then First (Just x) else First Nothing)
-
+find f = getFirst . foldMap (\x -> if f x then First (Just x) else First Nothing)
 length :: Foldable t => t a -> Int
 length  = getSum.foldMap (const (Sum 1))
 
@@ -111,7 +110,7 @@ mapF f (Fold step start done) = Fold customStep start done
 nullF :: Fold a Bool Bool
 nullF = Fold step True id
   where
-    step elem _ = False
+    step _ _ = False
 
 findF :: (a -> Bool) -> Fold a (Maybe a) (Maybe a)
 findF f = Fold step Nothing id 
@@ -123,7 +122,7 @@ topKF :: Ord a => Int -> Fold a [a] [a]
 topKF k = Fold step [] done
   where
     step acc x = x : acc                   
-    done acc = take k (reverse (sort acc)) 
+    done acc = reverse $ take k (reverse (sort acc))
 
 -- Mathematical folds. Use combineWith to implement average from the basic ones!
 sumF :: Num a => Fold a a a
@@ -167,19 +166,25 @@ coUnzip (Left fa)  = fmap Left fa
 coUnzip (Right fb) = fmap Right fb
 
 -- Section 4: MultiSet Foldable instances
-{-
+
 newtype FoldOccur a = FoldOccur {getFoldOccur :: MultiSet a}
 
 instance Foldable FoldOccur where
   foldMap :: Monoid m => (a -> m) -> FoldOccur a -> m 
-  foldMap f (FoldOccur ms) = foldOccur (\element count acc -> acc <> stimes count (f element)) mempty ms
+  foldMap f (FoldOccur ms) = foldMap f ms 
 
 newtype MinToMax a = MinToMax {getMinToMax :: MultiSet a}
-instance Foldable MinToMax
+
+instance Foldable MinToMax where
+  foldMap f (MinToMax ms) = foldMap f ms
+
 
 newtype MaxToMin a = MaxToMin {getMaxToMin :: MultiSet a}
-instance Foldable MaxToMin
--}
+
+instance Foldable MaxToMin where
+  foldMap f (MaxToMin ms) = foldMap f (reverse (foldr (:) [] ms))
+
+
 
 -- Bonus section
 

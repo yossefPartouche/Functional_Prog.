@@ -48,7 +48,7 @@ remove x (MultiSet ms) = case lookupS x ms of
     Just old@(Arg x' n) -> 
         let new = Arg x' (n - 1) 
         in MultiSet $ Set.insert new (Set.delete old ms)
-    _        ->  MultiSet ms
+    _-> MultiSet ms
 
 -- | Convert a list into a multiset.
 fromList :: Ord a => [a] -> MultiSet a
@@ -70,15 +70,7 @@ lookupS e s =
 
 instance Eq a => Eq (MultiSet a) where
     (MultiSet xs) == (MultiSet xs') = xs == xs'
-{-
--- Might be too much
-instance Eq a => Eq (MultiSet a) where
-    (MultiSet xs) == (MultiSet xs') = 
-        (xs == xs') && (extractCount (Set.toList (xs))) == (extractCount (Set.toList (xs')))
-            where 
-                extractCount :: [(Arg a Int)] -> [Int]
-                extractCount = map (\(Arg _ c)-> c)
--}
+
 instance Show a => Show (MultiSet a) where
     show xs = "{" ++ intercalate "," (map show (flattenDup $ Set.toList (_getMultiset xs))) ++ "}"
 
@@ -95,6 +87,4 @@ instance Foldable MultiSet where
 -- | /O(n)/. 
 -- Fold over the elements of a multiset with their occurrences.
 foldOccur :: (a -> Int -> b -> b) -> b -> MultiSet a -> b
-foldOccur _ b (MultiSet ms) | Set.null ms = b
-foldOccur f b (MultiSet ms) = 
-    Set.foldr (\(Arg x cnt) acc -> f x cnt acc) b ms
+foldOccur f z ms = foldr (\(Arg x cnt) acc -> f x cnt acc) z (Set.toList (_getMultiset ms))
