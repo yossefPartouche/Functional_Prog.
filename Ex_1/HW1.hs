@@ -291,6 +291,12 @@ anyGen pred (fun, check, val) =
     if not $ check val then False
     else pred (fun val) ||  anyGen pred (fun, check, fun val)
 
+anyGen' :: (a -> Bool) -> Generator a -> Bool
+anyGen' pred (fun, contOrNot, seed)
+    | not $ contOrNot seed = False
+    | pred seed || pred (fun contOrNot, nextVal = fun seed) 
+
+
 -- Adds an additional predicate to a generator.
 andAlso :: (a -> Bool) -> Generator a -> Generator a
 andAlso addPred (func, oldPred, a) = (func, \x -> addPred x && oldPred x, a)

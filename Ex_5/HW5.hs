@@ -15,7 +15,6 @@ import Data.Maybe
 import Data.Monoid (All (..), Any (..), First (..), Last (..), Product (..), Sum (..))
 import Data.Ord (Down (..))
 import Data.Semigroup (Arg (..), Max (..), Min (..))
-import Data.Set (Set)
 import Data.Set qualified as S
 import MultiSet
 import Prelude (Bool (..), Char, Either (..), Enum (..), Eq (..), Foldable (foldMap, foldl, foldr), Fractional, Functor (fmap), Int, Maybe (..), Monoid (..), Num (..), Ord (..), Ordering (..), Semigroup (..), Show (..), String, all, and, any, concat, concatMap, const, curry, drop, dropWhile, error, filter, flip, fst, id, init, map, not, or, replicate, reverse, snd, take, takeWhile, uncurry, undefined, zip, zipWith, (!!), ($), (&&), (++), (.), (||), (/), fromIntegral, (<$>))
@@ -68,8 +67,6 @@ product :: (Foldable t, Num a) => t a -> a
 product = getProduct . foldMap Product
 
 concatMap :: Foldable t => (a -> [b]) -> t a -> [b]
---concatMap f xs = foldMap f xs
--- concatMap f = foldMap f
 concatMap = foldMap 
 
 -- Section 2: Composing folds
@@ -170,7 +167,9 @@ coUnzip (Left fa)  = fmap Left fa
 coUnzip (Right fb) = fmap Right fb
 
 -- Section 4: MultiSet Foldable instances
+{-
 newtype FoldOccur a = FoldOccur {getFoldOccur :: MultiSet a}
+
 instance Foldable FoldOccur where
   foldMap :: Monoid m => (a -> m) -> FoldOccur a -> m 
   foldMap f (FoldOccur ms) = foldOccur (\element count acc -> acc <> stimes count (f element)) mempty ms
@@ -180,9 +179,10 @@ instance Foldable MinToMax
 
 newtype MaxToMin a = MaxToMin {getMaxToMin :: MultiSet a}
 instance Foldable MaxToMin
+-}
 
 -- Bonus section
-
+{-
 newtype ZipList a = ZipList {getZipList :: [a]} deriving (Show, Eq)
 
 instance Semigroup a => Semigroup (ZipList a)

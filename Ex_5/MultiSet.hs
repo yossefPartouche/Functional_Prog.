@@ -91,7 +91,10 @@ instance Ord a => Monoid (MultiSet a) where
 ---------------- Ex. 5 --------------------- 
 instance Foldable MultiSet where
     foldr f z ms = foldOccur (\x cnt acc -> foldr f acc (replicate cnt x)) z ms
+<<<<<<< HEAD
    
+=======
+  >>>>>>> d4299685556147636605a402290d313a897f9b69
 
 -- | /O(n)/. 
 -- Fold over the elements of a multiset with their occurrences.
