@@ -15,7 +15,7 @@ import Prelude hiding
   , unzip
   )
 
-import Data.Monoid (Sum(..))
+import Data.Monoid (Sum(..), Product(..))
 import HW5 
 import MultiSet (fromList)
 import Test.HUnit
@@ -127,6 +127,31 @@ section5Tests = TestList
   , "MaxToMin Sum single" ~: Sum 1 ~=? foldMap Sum (MaxToMin $ fromList ([1] :: [Int])) -- Single element
   ]
 
+-- Section 6: ZipList tests
+section6Tests :: Test
+section6Tests = TestList
+  [ "ZipList Sum basic" ~: ZipList [Sum 5, Sum 7] ~=? 
+      (ZipList [Sum 1, Sum 2, Sum 3] <> ZipList [Sum 4, Sum 5] :: ZipList (Sum Int))
+  , "ZipList Product basic" ~: ZipList [Product 0, Product 2, Product 6, Product 12, Product 20] ~=?
+      (ZipList (map Product [1..]) <> ZipList (map Product [0..]) :: ZipList (Product Int))
+  , "ZipList Sum empty left" ~: ZipList [] ~=? 
+      (ZipList [] <> ZipList [Sum 1, Sum 2] :: ZipList (Sum Int))
+  , "ZipList Sum empty right" ~: ZipList [] ~=? 
+      (ZipList [Sum 1, Sum 2] <> ZipList [] :: ZipList (Sum Int))
+  , "ZipList Sum both empty" ~: ZipList [] ~=? 
+      (ZipList [] <> ZipList [] :: ZipList (Sum Int))
+  , "ZipList mempty left identity" ~: ZipList [Sum 1, Sum 2] ~=?
+      (mempty <> ZipList [Sum 1, Sum 2] :: ZipList (Sum Int))
+  , "ZipList mempty right identity" ~: ZipList [Sum 1, Sum 2] ~=?
+      (ZipList [Sum 1, Sum 2] <> mempty :: ZipList (Sum Int))
+  , "ZipList mempty is empty" ~: ZipList [] ~=?
+      (mempty :: ZipList (Sum Int))
+  , "ZipList different lengths" ~: ZipList [Sum 5] ~=?
+      (ZipList [Sum 1, Sum 2, Sum 3, Sum 4] <> ZipList [Sum 4] :: ZipList (Sum Int))
+  , "ZipList single elements" ~: ZipList [Sum 3] ~=?
+      (ZipList [Sum 1] <> ZipList [Sum 2] :: ZipList (Sum Int))
+  ]
+
 allTests :: Test
 allTests = TestList
   [ section1Tests
@@ -134,6 +159,7 @@ allTests = TestList
   , section3Tests
   , section4Tests
   , section5Tests
+  , section6Tests
   ]
 
 main :: IO ()

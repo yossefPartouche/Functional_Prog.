@@ -185,15 +185,22 @@ instance Foldable MaxToMin where
 
 
 -- Bonus section
-{-
+
 newtype ZipList a = ZipList {getZipList :: [a]} deriving (Show, Eq)
 
-instance Semigroup a => Semigroup (ZipList a)
-instance Monoid a => Monoid (ZipList a)
+instance Semigroup a => Semigroup (ZipList a) where
+  ZipList [] <> ZipList _ = ZipList []                      
+  ZipList _ <> ZipList [] = ZipList []                     
+  ZipList (x:xs) <> ZipList (y:ys) =                
+    let combined = x <> y
+        ZipList rest = ZipList xs <> ZipList ys
+    in ZipList (combined : rest)
 
+instance Monoid a => Monoid (ZipList a) where 
+  mempty = ZipList []
 
 
 -- Bonus (5 pt.): implement the varianceF Fold. This is slightly harder than average - the formula is
 -- E[X^2] - E[x]^2, so you need to keep track of more than two quantities in your tuple. Use ⁠ combineWith ⁠ as needed.
-varianceF :: Fractional a => Fold a b a
--}
+--varianceF :: Fractional a => Fold a b a
+
