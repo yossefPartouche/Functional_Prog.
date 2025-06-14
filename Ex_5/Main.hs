@@ -20,6 +20,7 @@ import HW5
 import MultiSet (fromList)
 import Test.HUnit
 
+
 -- Section 1: Foldable functions
 section1Tests :: Test
 section1Tests = TestList
@@ -85,6 +86,11 @@ section3Tests = TestList
   , "strengthenL" ~: [('x', 1 :: Int), ('x', 2 :: Int)] ~=? strengthenL 'x' [1, 2]
   , "strengthenR" ~: [(1 :: Int, 'x'), (2 :: Int, 'x')] ~=? strengthenR 'x' [1, 2]
   , "unzip Maybe" ~: (Just (1 :: Int), Just (10 :: Int)) ~=? unzip (Just (1, 10))
+  , "fmapToFst length" ~: [(3 :: Int, "foo"), (3 :: Int, "bar")] ~=? fmapToFst length ["foo", "bar"]
+  , "fmapToSnd length Just" ~: Just ("foo", 3 :: Int) ~=? fmapToSnd length (Just "foo")
+  , "strengthenL 42 Right" ~: Right (42 :: Int, "foo") ~=? strengthenL (42 :: Int) (Right "foo" :: Either String String)
+  , "strengthenR x list" ~: [(1 :: Int, 'x'), (2 :: Int, 'x'), (3 :: Int, 'x')] ~=? strengthenR 'x' [1, 2, 3]
+  , "unzip Just pair" ~: (Just (1 :: Int), Just (2 :: Int)) ~=? unzip (Just (1, 2))
   , "fmapToFst empty" ~: ([] :: [(Int, Char)]) ~=? fmapToFst fromEnum ([] :: [Char]) -- Empty list
   , "fmapToSnd empty" ~: ([] :: [(Char, Int)]) ~=? fmapToSnd fromEnum ([] :: [Char]) -- Empty list
   , "strengthenL empty" ~: ([] :: [(Char, Int)]) ~=? strengthenL 'x' ([] :: [Int]) -- Empty list
